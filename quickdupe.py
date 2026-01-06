@@ -509,6 +509,22 @@ class QuickDupeApp:
         self.show_overlay_var = tk.BooleanVar(value=self.config.get("show_overlay", True))
         ttk.Checkbutton(frame, text="Show on-screen text", variable=self.show_overlay_var, command=self.save_settings).pack(anchor='w', padx=10, pady=5)
 
+        # ===== DRAG DROP FALLBACK =====
+        self.use_drag_drop_var = tk.BooleanVar(value=self.config.get("use_drag_drop", False))
+        drag_drop_frame = ttk.Frame(frame)
+        drag_drop_frame.pack(anchor='w', padx=10, pady=5)
+        ttk.Checkbutton(drag_drop_frame, text="Use drag for drop (if ViGEmBus fails)", variable=self.use_drag_drop_var, command=self.save_settings).pack(side='left')
+        ttk.Button(drag_drop_frame, text="Record Drag Path", width=14, command=self.start_drag_path_recording).pack(side='left', padx=10)
+        self.drag_path_var = tk.StringVar()
+        saved_drag_end = self.config.get("drag_end", None)
+        if saved_drag_end:
+            self.drag_end = tuple(saved_drag_end)
+            self.drag_path_var.set(f"→ ({saved_drag_end[0]}, {saved_drag_end[1]})")
+        else:
+            self.drag_end = (550, 1247)  # Default drop zone
+            self.drag_path_var.set(f"→ (550, 1247)")
+        ttk.Label(drag_drop_frame, textvariable=self.drag_path_var, font=("Consolas", 8)).pack(side='left')
+
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
         # ===== KEYDOOR METHOD SECTION =====
@@ -876,6 +892,49 @@ class QuickDupeApp:
         self.drag_mouse_listener = mouse.Listener(on_click=on_click)
         self.drag_mouse_listener.start()
 
+    def start_drag_path_recording(self):
+        """Record drag path for drop fallback - 10 sec countdown then drag"""
+        self.show_overlay("10 seconds to drag item to drop zone...")
+        self._drag_path_countdown(10)
+
+    def _drag_path_countdown(self, seconds_left):
+        if seconds_left > 0:
+            self.show_overlay(f"Drag item in {seconds_left}...")
+            self.root.after(1000, lambda: self._drag_path_countdown(seconds_left - 1))
+        else:
+            self._start_drag_path_listener()
+
+    def _start_drag_path_listener(self):
+        """Listen for drag to record drop path"""
+        from pynput import mouse
+
+        self.show_overlay("DRAG NOW!")
+        drag_start_pos = [None, None]
+
+        def on_click(x, y, button, pressed):
+            if button != mouse.Button.left:
+                return
+
+            if pressed:
+                drag_start_pos[0] = x
+                drag_start_pos[1] = y
+                self.show_overlay(f"Start: ({x},{y}) - Release...")
+            else:
+                if drag_start_pos[0] is not None:
+                    # Use existing drag_start (slot position) but record drag_end
+                    self.drag_end = (x, y)
+                    self.drag_path_var.set(f"→ ({x}, {y})")
+
+                    self.config["drag_end"] = [x, y]
+                    save_config(self.config)
+
+                    self.show_overlay(f"Drag path saved!")
+                    print(f"[DRAG PATH] Drop zone: ({x}, {y})")
+                    return False
+
+        listener = mouse.Listener(on_click=on_click)
+        listener.start()
+
     def start_slot_recording(self):
         """Record drop position - click where the item slot is"""
         self.slot_record_btn.config(text="3...")
@@ -1086,6 +1145,7 @@ class QuickDupeApp:
         # General settings
         self.config["stay_on_top"] = self.stay_on_top_var.get()
         self.config["show_overlay"] = self.show_overlay_var.get()
+        self.config["use_drag_drop"] = self.use_drag_drop_var.get()
         save_config(self.config)
 
     def reset_keydoor_defaults(self):
@@ -1249,25 +1309,38 @@ class QuickDupeApp:
         start_packet_drop()
         is_disconnected = True
 
-        print(f"[KEYDOOR] Holding X button for {x_hold_ms}ms")
-        # ===== Hold Xbox X button (drop key) =====
-        gp.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
-        gp.update()
+        # ===== Drop item (Xbox X or drag fallback) =====
+        if self.use_drag_drop_var.get():
+            # Drag fallback
+            print(f"[KEYDOOR] Using drag drop: {self.drag_start} → {self.drag_end}")
+            pynput_mouse.position = self.drag_start
+            time.sleep(0.05)
+            pynput_mouse.press(MouseButton.left)
+            time.sleep(0.05)
+            pynput_mouse.position = self.drag_end
+            time.sleep(x_hold_ms / 1000.0)  # Use X hold time for drag duration
+            pynput_mouse.release(MouseButton.left)
+            print("[KEYDOOR] Drag complete - key should be dropped")
+        else:
+            # Xbox X button
+            print(f"[KEYDOOR] Holding X button for {x_hold_ms}ms")
+            gp.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+            gp.update()
 
-        # Hold for configured time (cancelable)
-        t = 0
-        while t < x_hold_ms:
-            if self.keydoor_stop:
-                gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
-                gp.update()
-                self.finish_keydoor(is_disconnected)
-                return
-            time.sleep(0.01)
-            t += 10
+            # Hold for configured time (cancelable)
+            t = 0
+            while t < x_hold_ms:
+                if self.keydoor_stop:
+                    gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+                    gp.update()
+                    self.finish_keydoor(is_disconnected)
+                    return
+                time.sleep(0.01)
+                t += 10
 
-        gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
-        gp.update()
-        print("[KEYDOOR] X released - key should be dropped")
+            gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+            gp.update()
+            print("[KEYDOOR] X released - key should be dropped")
 
         if self.keydoor_stop:
             self.finish_keydoor(is_disconnected)
@@ -1557,24 +1630,35 @@ class QuickDupeApp:
                 if self.triggernade_stop:
                     break
 
-                # ===== Wait 300ms then drop with Xbox X =====
+                # ===== Wait 300ms then drop =====
                 time.sleep(0.300)
 
-                # Move mouse to inventory slot and use Xbox X to drop
-                pynput_mouse.position = drop_pos
-                time.sleep(0.020)
+                x_hold_ms = self.keydoor_x_hold_var.get()
 
-                gp = get_gamepad()
-                if gp:
-                    x_hold_ms = self.keydoor_x_hold_var.get()  # Use same setting as keydoor
-                    gp.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
-                    gp.update()
+                if self.use_drag_drop_var.get():
+                    # Drag fallback
+                    pynput_mouse.position = drop_pos
+                    time.sleep(0.05)
+                    pynput_mouse.press(MouseButton.left)
+                    time.sleep(0.05)
+                    pynput_mouse.position = self.drag_end
                     time.sleep(x_hold_ms / 1000.0)
-                    gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
-                    gp.update()
-                    print(f"[{cycle}] Dropped with X ({x_hold_ms}ms)")
+                    pynput_mouse.release(MouseButton.left)
+                    print(f"[{cycle}] Dropped with drag")
                 else:
-                    print(f"[{cycle}] ERROR: No gamepad for X drop")
+                    # Xbox X button
+                    pynput_mouse.position = drop_pos
+                    time.sleep(0.020)
+                    gp = get_gamepad()
+                    if gp:
+                        gp.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+                        gp.update()
+                        time.sleep(x_hold_ms / 1000.0)
+                        gp.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+                        gp.update()
+                        print(f"[{cycle}] Dropped with X ({x_hold_ms}ms)")
+                    else:
+                        print(f"[{cycle}] ERROR: No gamepad for X drop")
 
                 if self.triggernade_stop:
                     break
