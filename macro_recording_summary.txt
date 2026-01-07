@@ -1,0 +1,374 @@
+Macro Recording Summary
+=======================
+Total Duration: 39602.135ms (39.60s)
+Total Events: 367
+
+Event Log:
+--------------------------------------------------------------------------------
+  6835.441ms | MOUSE DOWN | left at (4756, 1407)
+  6948.757ms | MOUSE UP   | left at (4756, 1407) (held 113.316ms)
+  8261.517ms | MOUSE DOWN | left at (2602, 1297)
+  8397.565ms | MOUSE UP   | left at (2602, 1297) (held 136.048ms)
+ 10442.225ms | KEY DOWN   | f8
+ 10455.282ms | MOUSE UP   | left at (2661, 1205) (held 0.000ms) [ORPHAN]
+ 10457.071ms | MOUSE UP   | left at (2661, 1205) (held 0.000ms) [ORPHAN]
+ 10458.524ms | MOUSE UP   | right at (2661, 1205) (held 0.000ms) [ORPHAN]
+ 10461.132ms | KEY UP     | e (held 0.000ms) [ORPHAN]
+ 10462.137ms | KEY UP     | q (held 0.000ms) [ORPHAN]
+ 10463.126ms | KEY UP     | tab (held 0.000ms) [ORPHAN]
+ 10603.281ms | KEY UP     | f8 (held 161.056ms)
+ 10682.193ms | MOUSE DOWN | left at (2661, 1205)
+ 11196.963ms | MOUSE DOWN | right at (2662, 1204)
+ 11249.406ms | MOUSE UP   | right at (2662, 1204) (held 52.444ms)
+ 11250.360ms | MOUSE UP   | left at (2662, 1204) (held 568.167ms)
+ 11251.198ms | KEY DOWN   | e
+ 11263.657ms | KEY UP     | e (held 12.459ms)
+ 11453.386ms | KEY DOWN   | tab
+ 11505.574ms | KEY UP     | tab (held 52.188ms)
+ 11857.264ms | MOUSE DOWN | left at (3027, 733)
+ 12409.550ms | MOUSE UP   | left at (867, 1146) (held 552.285ms)
+ 12560.936ms | KEY DOWN   | tab
+ 12613.321ms | KEY UP     | tab (held 52.385ms)
+ 12914.545ms | MOUSE DOWN | left at (867, 1146)
+ 12965.835ms | MOUSE UP   | left at (867, 1146) (held 51.290ms)
+ 13048.204ms | MOUSE DOWN | left at (867, 1146)
+ 13099.752ms | MOUSE UP   | left at (867, 1146) (held 51.547ms)
+ 13150.875ms | MOUSE DOWN | left at (867, 1146)
+ 13202.068ms | MOUSE UP   | left at (867, 1146) (held 51.192ms)
+ 13253.023ms | MOUSE DOWN | left at (867, 1146)
+ 13304.486ms | MOUSE UP   | left at (867, 1146) (held 51.463ms)
+ 13355.824ms | MOUSE DOWN | left at (867, 1146)
+ 13407.264ms | MOUSE UP   | left at (867, 1146) (held 51.440ms)
+ 13464.502ms | MOUSE DOWN | left at (867, 1146)
+ 13465.852ms | KEY DOWN   | e
+ 13473.177ms | KEY UP     | e (held 7.324ms)
+ 13490.434ms | KEY DOWN   | e
+ 13497.584ms | KEY UP     | e (held 7.150ms)
+ 13514.358ms | MOUSE UP   | left at (867, 1146) (held 49.856ms)
+ 13515.673ms | KEY DOWN   | e
+ 13522.725ms | KEY UP     | e (held 7.051ms)
+ 13540.568ms | KEY DOWN   | e
+ 13547.732ms | KEY UP     | e (held 7.164ms)
+ 13581.261ms | MOUSE DOWN | left at (867, 1146)
+ 13583.039ms | KEY DOWN   | e
+ 13590.290ms | KEY UP     | e (held 7.251ms)
+ 13607.839ms | KEY DOWN   | e
+ 13615.006ms | KEY UP     | e (held 7.166ms)
+ 13631.581ms | MOUSE UP   | left at (867, 1146) (held 50.320ms)
+ 13633.494ms | KEY DOWN   | e
+ 13641.553ms | KEY UP     | e (held 8.059ms)
+ 13658.576ms | KEY DOWN   | e
+ 13666.487ms | KEY UP     | e (held 7.911ms)
+ 13699.775ms | MOUSE DOWN | left at (867, 1146)
+ 13702.208ms | KEY DOWN   | e
+ 13709.444ms | KEY UP     | e (held 7.236ms)
+ 13726.982ms | KEY DOWN   | e
+ 13734.213ms | KEY UP     | e (held 7.231ms)
+ 13750.675ms | MOUSE UP   | left at (867, 1146) (held 50.900ms)
+ 13751.829ms | KEY DOWN   | e
+ 13760.083ms | KEY UP     | e (held 8.254ms)
+ 13777.381ms | KEY DOWN   | e
+ 13784.644ms | KEY UP     | e (held 7.263ms)
+ 13801.482ms | MOUSE DOWN | left at (867, 1146)
+ 13803.444ms | KEY DOWN   | e
+ 13811.587ms | KEY UP     | e (held 8.143ms)
+ 13829.079ms | KEY DOWN   | e
+ 13838.341ms | KEY UP     | e (held 9.263ms)
+ 13855.176ms | MOUSE UP   | left at (867, 1146) (held 53.694ms)
+ 13857.019ms | KEY DOWN   | e
+ 13864.568ms | KEY UP     | e (held 7.549ms)
+ 13882.801ms | KEY DOWN   | e
+ 13890.270ms | KEY UP     | e (held 7.469ms)
+ 13914.352ms | MOUSE DOWN | left at (867, 1146)
+ 13916.470ms | KEY DOWN   | e
+ 13924.318ms | KEY UP     | e (held 7.848ms)
+ 13941.943ms | KEY DOWN   | e
+ 13949.272ms | KEY UP     | e (held 7.330ms)
+ 13966.109ms | MOUSE UP   | left at (867, 1146) (held 51.758ms)
+ 13967.868ms | KEY DOWN   | e
+ 13975.004ms | KEY UP     | e (held 7.136ms)
+ 13993.187ms | KEY DOWN   | e
+ 14000.535ms | KEY UP     | e (held 7.348ms)
+ 14018.897ms | KEY DOWN   | e
+ 14026.519ms | KEY UP     | e (held 7.622ms)
+ 14043.770ms | KEY DOWN   | e
+ 14053.145ms | KEY UP     | e (held 9.374ms)
+ 14071.684ms | KEY DOWN   | e
+ 14079.080ms | KEY UP     | e (held 7.396ms)
+ 14096.368ms | KEY DOWN   | e
+ 14104.228ms | KEY UP     | e (held 7.860ms)
+ 14122.511ms | KEY DOWN   | e
+ 14130.315ms | KEY UP     | e (held 7.804ms)
+ 14147.788ms | KEY DOWN   | e
+ 14155.445ms | KEY UP     | e (held 7.658ms)
+ 14172.578ms | KEY DOWN   | e
+ 14180.184ms | KEY UP     | e (held 7.605ms)
+ 14197.823ms | KEY DOWN   | e
+ 14205.271ms | KEY UP     | e (held 7.448ms)
+ 14223.006ms | KEY DOWN   | e
+ 14230.572ms | KEY UP     | e (held 7.566ms)
+ 14247.558ms | KEY DOWN   | e
+ 14254.674ms | KEY UP     | e (held 7.116ms)
+ 14271.542ms | KEY DOWN   | e
+ 14278.594ms | KEY UP     | e (held 7.052ms)
+ 14296.217ms | KEY DOWN   | e
+ 14303.713ms | KEY UP     | e (held 7.496ms)
+ 14320.746ms | KEY DOWN   | e
+ 14327.852ms | KEY UP     | e (held 7.105ms)
+ 14344.823ms | KEY DOWN   | e
+ 14351.950ms | KEY UP     | e (held 7.127ms)
+ 14368.959ms | KEY DOWN   | e
+ 14375.761ms | KEY UP     | e (held 6.803ms)
+ 14393.057ms | KEY DOWN   | e
+ 14400.406ms | KEY UP     | e (held 7.349ms)
+ 14417.870ms | KEY DOWN   | e
+ 14425.555ms | KEY UP     | e (held 7.685ms)
+ 14442.583ms | KEY DOWN   | e
+ 14449.648ms | KEY UP     | e (held 7.066ms)
+ 14466.578ms | KEY DOWN   | e
+ 14474.310ms | KEY UP     | e (held 7.731ms)
+ 14491.256ms | KEY DOWN   | e
+ 14498.005ms | KEY UP     | e (held 6.749ms)
+ 14515.443ms | KEY DOWN   | e
+ 14522.744ms | KEY UP     | e (held 7.301ms)
+ 14539.908ms | KEY DOWN   | e
+ 14546.884ms | KEY UP     | e (held 6.976ms)
+ 14564.374ms | KEY DOWN   | e
+ 14571.690ms | KEY UP     | e (held 7.316ms)
+ 14588.932ms | KEY DOWN   | e
+ 14595.859ms | KEY UP     | e (held 6.928ms)
+ 14613.097ms | KEY DOWN   | e
+ 14620.832ms | KEY UP     | e (held 7.735ms)
+ 14638.725ms | KEY DOWN   | e
+ 14645.734ms | KEY UP     | e (held 7.009ms)
+ 14662.805ms | KEY DOWN   | e
+ 14669.850ms | KEY UP     | e (held 7.045ms)
+ 14686.840ms | KEY DOWN   | e
+ 14693.687ms | KEY UP     | e (held 6.848ms)
+ 14711.049ms | KEY DOWN   | e
+ 14718.316ms | KEY UP     | e (held 7.267ms)
+ 14735.567ms | KEY DOWN   | e
+ 14742.429ms | KEY UP     | e (held 6.862ms)
+ 14759.726ms | KEY DOWN   | e
+ 14767.055ms | KEY UP     | e (held 7.329ms)
+ 14784.379ms | KEY DOWN   | e
+ 14790.973ms | KEY UP     | e (held 6.594ms)
+ 14808.540ms | KEY DOWN   | e
+ 14815.636ms | KEY UP     | e (held 7.096ms)
+ 14833.040ms | KEY DOWN   | e
+ 14839.984ms | KEY UP     | e (held 6.945ms)
+ 14857.090ms | KEY DOWN   | e
+ 14864.373ms | KEY UP     | e (held 7.283ms)
+ 14881.355ms | KEY DOWN   | e
+ 14888.136ms | KEY UP     | e (held 6.781ms)
+ 14905.340ms | KEY DOWN   | e
+ 14912.548ms | KEY UP     | e (held 7.208ms)
+ 14929.477ms | KEY DOWN   | e
+ 14936.553ms | KEY UP     | e (held 7.076ms)
+ 14953.835ms | KEY DOWN   | e
+ 14961.486ms | KEY UP     | e (held 7.651ms)
+ 14978.078ms | MOUSE UP   | left at (867, 1147) (held 0.000ms) [ORPHAN]
+ 14978.817ms | MOUSE UP   | left at (867, 1147) (held 0.000ms) [ORPHAN]
+ 14979.356ms | MOUSE UP   | right at (867, 1147) (held 0.000ms) [ORPHAN]
+ 14980.034ms | KEY UP     | e (held 0.000ms) [ORPHAN]
+ 14980.334ms | KEY UP     | q (held 0.000ms) [ORPHAN]
+ 14980.707ms | KEY UP     | tab (held 0.000ms) [ORPHAN]
+ 15763.196ms | KEY DOWN   | q
+ 16397.229ms | KEY UP     | q (held 634.033ms)
+ 16772.244ms | KEY DOWN   | tab
+ 16901.979ms | KEY UP     | tab (held 129.735ms)
+ 17449.224ms | KEY DOWN   | tab
+ 17553.003ms | KEY UP     | tab (held 103.779ms)
+ 17744.290ms | KEY DOWN   | w
+ 17837.048ms | KEY DOWN   | shift
+ 18394.666ms | KEY DOWN   | C
+ 18519.148ms | KEY UP     | C (held 124.482ms)
+ 19310.117ms | KEY UP     | W (held 0.000ms) [ORPHAN]
+ 19339.487ms | KEY UP     | shift (held 1502.439ms)
+ 19450.588ms | KEY DOWN   | e
+ 19531.233ms | KEY UP     | e (held 80.644ms)
+ 19628.295ms | KEY DOWN   | e
+ 19703.079ms | KEY UP     | e (held 74.784ms)
+ 19800.313ms | KEY DOWN   | e
+ 19871.536ms | KEY UP     | e (held 71.223ms)
+ 23196.715ms | KEY DOWN   | s
+ 23643.471ms | KEY UP     | s (held 446.756ms)
+ 25434.437ms | KEY DOWN   | tab
+ 25545.364ms | KEY UP     | tab (held 110.928ms)
+ 26272.036ms | KEY DOWN   | tab
+ 26354.765ms | KEY UP     | tab (held 82.729ms)
+ 26903.222ms | KEY UP     | w (held 9158.931ms)
+ 26975.064ms | KEY DOWN   | e
+ 26983.783ms | KEY DOWN   | r
+ 27042.828ms | KEY UP     | r (held 59.045ms)
+ 27046.473ms | KEY UP     | e (held 71.409ms)
+ 27687.128ms | KEY DOWN   | q
+ 27793.685ms | KEY UP     | q (held 106.557ms)
+ 28345.777ms | KEY DOWN   | q
+ 29234.126ms | KEY UP     | q (held 888.348ms)
+ 29534.313ms | KEY DOWN   | s
+ 30220.989ms | KEY UP     | s (held 686.676ms)
+ 33929.254ms | KEY DOWN   | f8
+ 33936.259ms | MOUSE UP   | left at (2655, 871) (held 0.000ms) [ORPHAN]
+ 33937.004ms | MOUSE UP   | left at (2655, 871) (held 0.000ms) [ORPHAN]
+ 33937.517ms | MOUSE UP   | right at (2655, 871) (held 0.000ms) [ORPHAN]
+ 33938.573ms | KEY UP     | e (held 0.000ms) [ORPHAN]
+ 33939.589ms | KEY UP     | q (held 0.000ms) [ORPHAN]
+ 33940.279ms | KEY UP     | tab (held 0.000ms) [ORPHAN]
+ 34035.119ms | KEY UP     | f8 (held 105.865ms)
+ 34165.178ms | MOUSE DOWN | left at (2655, 871)
+ 34679.238ms | MOUSE DOWN | right at (2655, 871)
+ 34731.506ms | MOUSE UP   | right at (2655, 871) (held 52.268ms)
+ 34732.646ms | MOUSE UP   | left at (2655, 871) (held 567.468ms)
+ 34734.014ms | KEY DOWN   | e
+ 34746.043ms | KEY UP     | e (held 12.029ms)
+ 34935.362ms | KEY DOWN   | tab
+ 34987.987ms | KEY UP     | tab (held 52.625ms)
+ 35345.704ms | MOUSE DOWN | left at (3027, 733)
+ 35898.102ms | MOUSE UP   | left at (867, 1146) (held 552.398ms)
+ 36049.860ms | KEY DOWN   | tab
+ 36101.732ms | KEY UP     | tab (held 51.872ms)
+ 36402.818ms | MOUSE DOWN | left at (867, 1146)
+ 36454.018ms | MOUSE UP   | left at (867, 1146) (held 51.200ms)
+ 36536.301ms | MOUSE DOWN | left at (867, 1146)
+ 36587.583ms | MOUSE UP   | left at (867, 1146) (held 51.283ms)
+ 36638.868ms | MOUSE DOWN | left at (867, 1146)
+ 36690.205ms | MOUSE UP   | left at (867, 1146) (held 51.336ms)
+ 36741.447ms | MOUSE DOWN | left at (867, 1146)
+ 36793.049ms | MOUSE UP   | left at (867, 1146) (held 51.602ms)
+ 36844.950ms | MOUSE DOWN | left at (867, 1146)
+ 36896.488ms | MOUSE UP   | left at (867, 1146) (held 51.537ms)
+ 36947.841ms | MOUSE DOWN | left at (867, 1146)
+ 36949.350ms | KEY DOWN   | e
+ 36956.296ms | KEY UP     | e (held 6.945ms)
+ 36973.409ms | KEY DOWN   | e
+ 36980.611ms | KEY UP     | e (held 7.202ms)
+ 36997.121ms | MOUSE UP   | left at (867, 1146) (held 49.280ms)
+ 36998.215ms | KEY DOWN   | e
+ 37004.693ms | KEY UP     | e (held 6.477ms)
+ 37021.870ms | KEY DOWN   | e
+ 37029.279ms | KEY UP     | e (held 7.409ms)
+ 37045.664ms | MOUSE DOWN | left at (867, 1146)
+ 37047.226ms | KEY DOWN   | e
+ 37054.118ms | KEY UP     | e (held 6.892ms)
+ 37071.408ms | KEY DOWN   | e
+ 37079.767ms | KEY UP     | e (held 8.360ms)
+ 37096.516ms | MOUSE UP   | left at (867, 1146) (held 50.852ms)
+ 37098.883ms | KEY DOWN   | e
+ 37106.103ms | KEY UP     | e (held 7.220ms)
+ 37123.674ms | KEY DOWN   | e
+ 37131.389ms | KEY UP     | e (held 7.714ms)
+ 37148.267ms | MOUSE DOWN | left at (867, 1146)
+ 37150.696ms | KEY DOWN   | e
+ 37157.631ms | KEY UP     | e (held 6.935ms)
+ 37175.646ms | KEY DOWN   | e
+ 37183.089ms | KEY UP     | e (held 7.444ms)
+ 37199.620ms | MOUSE UP   | left at (867, 1146) (held 51.352ms)
+ 37201.739ms | KEY DOWN   | e
+ 37208.943ms | KEY UP     | e (held 7.204ms)
+ 37226.513ms | KEY DOWN   | e
+ 37235.633ms | KEY UP     | e (held 9.119ms)
+ 37259.783ms | MOUSE DOWN | left at (867, 1146)
+ 37262.693ms | KEY DOWN   | e
+ 37270.760ms | KEY UP     | e (held 8.067ms)
+ 37288.909ms | KEY DOWN   | e
+ 37295.957ms | KEY UP     | e (held 7.048ms)
+ 37313.113ms | MOUSE UP   | left at (867, 1146) (held 53.330ms)
+ 37315.093ms | KEY DOWN   | e
+ 37323.524ms | KEY UP     | e (held 8.431ms)
+ 37340.310ms | KEY DOWN   | e
+ 37348.068ms | KEY UP     | e (held 7.758ms)
+ 37364.336ms | MOUSE DOWN | left at (867, 1146)
+ 37366.191ms | KEY DOWN   | e
+ 37374.575ms | KEY UP     | e (held 8.384ms)
+ 37392.346ms | KEY DOWN   | e
+ 37399.907ms | KEY UP     | e (held 7.561ms)
+ 37416.360ms | MOUSE UP   | left at (867, 1146) (held 52.024ms)
+ 37418.033ms | KEY DOWN   | e
+ 37425.416ms | KEY UP     | e (held 7.383ms)
+ 37442.824ms | KEY DOWN   | e
+ 37450.531ms | KEY UP     | e (held 7.707ms)
+ 37468.869ms | KEY DOWN   | e
+ 37476.370ms | KEY UP     | e (held 7.502ms)
+ 37493.240ms | KEY DOWN   | e
+ 37500.957ms | KEY UP     | e (held 7.717ms)
+ 37518.350ms | KEY DOWN   | e
+ 37525.491ms | KEY UP     | e (held 7.141ms)
+ 37542.728ms | KEY DOWN   | e
+ 37551.098ms | KEY UP     | e (held 8.369ms)
+ 37568.164ms | KEY DOWN   | e
+ 37575.687ms | KEY UP     | e (held 7.523ms)
+ 37594.307ms | KEY DOWN   | e
+ 37601.777ms | KEY UP     | e (held 7.469ms)
+ 37619.368ms | KEY DOWN   | e
+ 37627.594ms | KEY UP     | e (held 8.226ms)
+ 37645.436ms | KEY DOWN   | e
+ 37652.280ms | KEY UP     | e (held 6.844ms)
+ 37669.333ms | KEY DOWN   | e
+ 37677.860ms | KEY UP     | e (held 8.527ms)
+ 37695.282ms | KEY DOWN   | e
+ 37702.153ms | KEY UP     | e (held 6.871ms)
+ 37719.258ms | KEY DOWN   | e
+ 37726.395ms | KEY UP     | e (held 7.138ms)
+ 37743.234ms | KEY DOWN   | e
+ 37750.301ms | KEY UP     | e (held 7.067ms)
+ 37768.020ms | KEY DOWN   | e
+ 37774.695ms | KEY UP     | e (held 6.675ms)
+ 37792.147ms | KEY DOWN   | e
+ 37799.480ms | KEY UP     | e (held 7.334ms)
+ 37816.601ms | KEY DOWN   | e
+ 37823.620ms | KEY UP     | e (held 7.019ms)
+ 37840.480ms | KEY DOWN   | e
+ 37847.190ms | KEY UP     | e (held 6.710ms)
+ 37864.784ms | KEY DOWN   | e
+ 37872.100ms | KEY UP     | e (held 7.316ms)
+ 37889.141ms | KEY DOWN   | e
+ 37896.086ms | KEY UP     | e (held 6.946ms)
+ 37913.324ms | KEY DOWN   | e
+ 37920.560ms | KEY UP     | e (held 7.236ms)
+ 37937.795ms | KEY DOWN   | e
+ 37944.886ms | KEY UP     | e (held 7.091ms)
+ 37962.078ms | KEY DOWN   | e
+ 37968.613ms | KEY UP     | e (held 6.534ms)
+ 37986.034ms | KEY DOWN   | e
+ 37993.018ms | KEY UP     | e (held 6.984ms)
+ 38009.980ms | KEY DOWN   | e
+ 38017.249ms | KEY UP     | e (held 7.268ms)
+ 38034.243ms | KEY DOWN   | e
+ 38040.944ms | KEY UP     | e (held 6.701ms)
+ 38058.964ms | KEY DOWN   | e
+ 38066.224ms | KEY UP     | e (held 7.260ms)
+ 38083.258ms | KEY DOWN   | e
+ 38090.284ms | KEY UP     | e (held 7.026ms)
+ 38107.259ms | KEY DOWN   | e
+ 38114.787ms | KEY UP     | e (held 7.528ms)
+ 38132.087ms | KEY DOWN   | e
+ 38138.751ms | KEY UP     | e (held 6.664ms)
+ 38155.916ms | KEY DOWN   | e
+ 38163.071ms | KEY UP     | e (held 7.155ms)
+ 38180.337ms | KEY DOWN   | e
+ 38187.161ms | KEY UP     | e (held 6.824ms)
+ 38204.483ms | KEY DOWN   | e
+ 38211.681ms | KEY UP     | e (held 7.198ms)
+ 38228.624ms | KEY DOWN   | e
+ 38235.362ms | KEY UP     | e (held 6.738ms)
+ 38253.211ms | KEY DOWN   | e
+ 38261.613ms | KEY UP     | e (held 8.402ms)
+ 38278.925ms | KEY DOWN   | e
+ 38286.066ms | KEY UP     | e (held 7.141ms)
+ 38303.094ms | KEY DOWN   | e
+ 38310.191ms | KEY UP     | e (held 7.097ms)
+ 38327.102ms | KEY DOWN   | e
+ 38334.306ms | KEY UP     | e (held 7.204ms)
+ 38351.445ms | KEY DOWN   | e
+ 38358.291ms | KEY UP     | e (held 6.847ms)
+ 38375.750ms | KEY DOWN   | e
+ 38382.886ms | KEY UP     | e (held 7.136ms)
+ 38400.053ms | KEY DOWN   | e
+ 38407.506ms | KEY UP     | e (held 7.453ms)
+ 38424.244ms | MOUSE UP   | left at (867, 1146) (held 0.000ms) [ORPHAN]
+ 38424.824ms | MOUSE UP   | left at (867, 1146) (held 0.000ms) [ORPHAN]
+ 38425.150ms | MOUSE UP   | right at (867, 1146) (held 0.000ms) [ORPHAN]
+ 38425.935ms | KEY UP     | e (held 0.000ms) [ORPHAN]
+ 38426.283ms | KEY UP     | q (held 0.000ms) [ORPHAN]
+ 38426.841ms | KEY UP     | tab (held 0.000ms) [ORPHAN]

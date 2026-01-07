@@ -1,12 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
-import sys
-import site
+import importlib.util
 
-# Find packages in site-packages dynamically
-site_packages = site.getsitepackages()[0]
-vgamepad_path = os.path.join(site_packages, 'vgamepad')
-pydivert_path = os.path.join(site_packages, 'pydivert')
+# Find packages dynamically by locating the actual module files
+def find_package_path(package_name):
+    spec = importlib.util.find_spec(package_name)
+    if spec and spec.submodule_search_locations:
+        return spec.submodule_search_locations[0]
+    return None
+
+vgamepad_path = find_package_path('vgamepad')
+pydivert_path = find_package_path('pydivert')
 
 a = Analysis(
     ['quickdupe.py'],

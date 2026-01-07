@@ -1,0 +1,2736 @@
+{
+  "total_duration_ms": 39602.135,
+  "total_events": 367,
+  "events": [
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 4756,
+      "y": 1407,
+      "timestamp_ms": 6835.441,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 4756,
+      "y": 1407,
+      "timestamp_ms": 6948.757,
+      "action": "release",
+      "held_duration_ms": 113.316,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 2602,
+      "y": 1297,
+      "timestamp_ms": 8261.517,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2602,
+      "y": 1297,
+      "timestamp_ms": 8397.565,
+      "action": "release",
+      "held_duration_ms": 136.048,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "f8",
+      "timestamp_ms": 10442.225,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2661,
+      "y": 1205,
+      "timestamp_ms": 10455.282,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2661,
+      "y": 1205,
+      "timestamp_ms": 10457.071,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 2661,
+      "y": 1205,
+      "timestamp_ms": 10458.524,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 10461.132,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 10462.137,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 10463.126,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "f8",
+      "timestamp_ms": 10603.281,
+      "action": "release",
+      "held_duration_ms": 161.056,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 2661,
+      "y": 1205,
+      "timestamp_ms": 10682.193,
+      "action": "press"
+    },
+    {
+      "type": "mouse_press",
+      "button": "right",
+      "x": 2662,
+      "y": 1204,
+      "timestamp_ms": 11196.963,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 2662,
+      "y": 1204,
+      "timestamp_ms": 11249.406,
+      "action": "release",
+      "held_duration_ms": 52.444,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2662,
+      "y": 1204,
+      "timestamp_ms": 11250.36,
+      "action": "release",
+      "held_duration_ms": 568.167,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 11251.198,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 11263.657,
+      "action": "release",
+      "held_duration_ms": 12.459,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 11453.386,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 11505.574,
+      "action": "release",
+      "held_duration_ms": 52.188,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 3027,
+      "y": 733,
+      "timestamp_ms": 11857.264,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 12409.55,
+      "action": "release",
+      "held_duration_ms": 552.285,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 12560.936,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 12613.321,
+      "action": "release",
+      "held_duration_ms": 52.385,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 12914.545,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 12965.835,
+      "action": "release",
+      "held_duration_ms": 51.29,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13048.204,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13099.752,
+      "action": "release",
+      "held_duration_ms": 51.547,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13150.875,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13202.068,
+      "action": "release",
+      "held_duration_ms": 51.192,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13253.023,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13304.486,
+      "action": "release",
+      "held_duration_ms": 51.463,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13355.824,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13407.264,
+      "action": "release",
+      "held_duration_ms": 51.44,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13464.502,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13465.852,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13473.177,
+      "action": "release",
+      "held_duration_ms": 7.324,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13490.434,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13497.584,
+      "action": "release",
+      "held_duration_ms": 7.15,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13514.358,
+      "action": "release",
+      "held_duration_ms": 49.856,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13515.673,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13522.725,
+      "action": "release",
+      "held_duration_ms": 7.051,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13540.568,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13547.732,
+      "action": "release",
+      "held_duration_ms": 7.164,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13581.261,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13583.039,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13590.29,
+      "action": "release",
+      "held_duration_ms": 7.251,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13607.839,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13615.006,
+      "action": "release",
+      "held_duration_ms": 7.166,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13631.581,
+      "action": "release",
+      "held_duration_ms": 50.32,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13633.494,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13641.553,
+      "action": "release",
+      "held_duration_ms": 8.059,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13658.576,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13666.487,
+      "action": "release",
+      "held_duration_ms": 7.911,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13699.775,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13702.208,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13709.444,
+      "action": "release",
+      "held_duration_ms": 7.236,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13726.982,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13734.213,
+      "action": "release",
+      "held_duration_ms": 7.231,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13750.675,
+      "action": "release",
+      "held_duration_ms": 50.9,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13751.829,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13760.083,
+      "action": "release",
+      "held_duration_ms": 8.254,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13777.381,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13784.644,
+      "action": "release",
+      "held_duration_ms": 7.263,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13801.482,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13803.444,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13811.587,
+      "action": "release",
+      "held_duration_ms": 8.143,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13829.079,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13838.341,
+      "action": "release",
+      "held_duration_ms": 9.263,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13855.176,
+      "action": "release",
+      "held_duration_ms": 53.694,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13857.019,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13864.568,
+      "action": "release",
+      "held_duration_ms": 7.549,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13882.801,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13890.27,
+      "action": "release",
+      "held_duration_ms": 7.469,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13914.352,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13916.47,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13924.318,
+      "action": "release",
+      "held_duration_ms": 7.848,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13941.943,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13949.272,
+      "action": "release",
+      "held_duration_ms": 7.33,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 13966.109,
+      "action": "release",
+      "held_duration_ms": 51.758,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13967.868,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 13975.004,
+      "action": "release",
+      "held_duration_ms": 7.136,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 13993.187,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14000.535,
+      "action": "release",
+      "held_duration_ms": 7.348,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14018.897,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14026.519,
+      "action": "release",
+      "held_duration_ms": 7.622,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14043.77,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14053.145,
+      "action": "release",
+      "held_duration_ms": 9.374,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14071.684,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14079.08,
+      "action": "release",
+      "held_duration_ms": 7.396,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14096.368,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14104.228,
+      "action": "release",
+      "held_duration_ms": 7.86,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14122.511,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14130.315,
+      "action": "release",
+      "held_duration_ms": 7.804,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14147.788,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14155.445,
+      "action": "release",
+      "held_duration_ms": 7.658,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14172.578,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14180.184,
+      "action": "release",
+      "held_duration_ms": 7.605,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14197.823,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14205.271,
+      "action": "release",
+      "held_duration_ms": 7.448,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14223.006,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14230.572,
+      "action": "release",
+      "held_duration_ms": 7.566,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14247.558,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14254.674,
+      "action": "release",
+      "held_duration_ms": 7.116,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14271.542,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14278.594,
+      "action": "release",
+      "held_duration_ms": 7.052,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14296.217,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14303.713,
+      "action": "release",
+      "held_duration_ms": 7.496,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14320.746,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14327.852,
+      "action": "release",
+      "held_duration_ms": 7.105,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14344.823,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14351.95,
+      "action": "release",
+      "held_duration_ms": 7.127,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14368.959,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14375.761,
+      "action": "release",
+      "held_duration_ms": 6.803,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14393.057,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14400.406,
+      "action": "release",
+      "held_duration_ms": 7.349,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14417.87,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14425.555,
+      "action": "release",
+      "held_duration_ms": 7.685,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14442.583,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14449.648,
+      "action": "release",
+      "held_duration_ms": 7.066,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14466.578,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14474.31,
+      "action": "release",
+      "held_duration_ms": 7.731,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14491.256,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14498.005,
+      "action": "release",
+      "held_duration_ms": 6.749,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14515.443,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14522.744,
+      "action": "release",
+      "held_duration_ms": 7.301,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14539.908,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14546.884,
+      "action": "release",
+      "held_duration_ms": 6.976,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14564.374,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14571.69,
+      "action": "release",
+      "held_duration_ms": 7.316,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14588.932,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14595.859,
+      "action": "release",
+      "held_duration_ms": 6.928,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14613.097,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14620.832,
+      "action": "release",
+      "held_duration_ms": 7.735,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14638.725,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14645.734,
+      "action": "release",
+      "held_duration_ms": 7.009,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14662.805,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14669.85,
+      "action": "release",
+      "held_duration_ms": 7.045,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14686.84,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14693.687,
+      "action": "release",
+      "held_duration_ms": 6.848,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14711.049,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14718.316,
+      "action": "release",
+      "held_duration_ms": 7.267,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14735.567,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14742.429,
+      "action": "release",
+      "held_duration_ms": 6.862,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14759.726,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14767.055,
+      "action": "release",
+      "held_duration_ms": 7.329,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14784.379,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14790.973,
+      "action": "release",
+      "held_duration_ms": 6.594,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14808.54,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14815.636,
+      "action": "release",
+      "held_duration_ms": 7.096,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14833.04,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14839.984,
+      "action": "release",
+      "held_duration_ms": 6.945,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14857.09,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14864.373,
+      "action": "release",
+      "held_duration_ms": 7.283,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14881.355,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14888.136,
+      "action": "release",
+      "held_duration_ms": 6.781,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14905.34,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14912.548,
+      "action": "release",
+      "held_duration_ms": 7.208,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14929.477,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14936.553,
+      "action": "release",
+      "held_duration_ms": 7.076,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 14953.835,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14961.486,
+      "action": "release",
+      "held_duration_ms": 7.651,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1147,
+      "timestamp_ms": 14978.078,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1147,
+      "timestamp_ms": 14978.817,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 867,
+      "y": 1147,
+      "timestamp_ms": 14979.356,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 14980.034,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 14980.334,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 14980.707,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_press",
+      "key": "q",
+      "timestamp_ms": 15763.196,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 16397.229,
+      "action": "release",
+      "held_duration_ms": 634.033,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 16772.244,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 16901.979,
+      "action": "release",
+      "held_duration_ms": 129.735,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 17449.224,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 17553.003,
+      "action": "release",
+      "held_duration_ms": 103.779,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "w",
+      "timestamp_ms": 17744.29,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "shift",
+      "timestamp_ms": 17837.048,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "C",
+      "timestamp_ms": 18394.666,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "C",
+      "timestamp_ms": 18519.148,
+      "action": "release",
+      "held_duration_ms": 124.482,
+      "orphan": false
+    },
+    {
+      "type": "key_release",
+      "key": "W",
+      "timestamp_ms": 19310.117,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "shift",
+      "timestamp_ms": 19339.487,
+      "action": "release",
+      "held_duration_ms": 1502.439,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 19450.588,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 19531.233,
+      "action": "release",
+      "held_duration_ms": 80.644,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 19628.295,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 19703.079,
+      "action": "release",
+      "held_duration_ms": 74.784,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 19800.313,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 19871.536,
+      "action": "release",
+      "held_duration_ms": 71.223,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "s",
+      "timestamp_ms": 23196.715,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "s",
+      "timestamp_ms": 23643.471,
+      "action": "release",
+      "held_duration_ms": 446.756,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 25434.437,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 25545.364,
+      "action": "release",
+      "held_duration_ms": 110.928,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 26272.036,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 26354.765,
+      "action": "release",
+      "held_duration_ms": 82.729,
+      "orphan": false
+    },
+    {
+      "type": "key_release",
+      "key": "w",
+      "timestamp_ms": 26903.222,
+      "action": "release",
+      "held_duration_ms": 9158.931,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 26975.064,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "r",
+      "timestamp_ms": 26983.783,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "r",
+      "timestamp_ms": 27042.828,
+      "action": "release",
+      "held_duration_ms": 59.045,
+      "orphan": false
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 27046.473,
+      "action": "release",
+      "held_duration_ms": 71.409,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "q",
+      "timestamp_ms": 27687.128,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 27793.685,
+      "action": "release",
+      "held_duration_ms": 106.557,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "q",
+      "timestamp_ms": 28345.777,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 29234.126,
+      "action": "release",
+      "held_duration_ms": 888.348,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "s",
+      "timestamp_ms": 29534.313,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "s",
+      "timestamp_ms": 30220.989,
+      "action": "release",
+      "held_duration_ms": 686.676,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "f8",
+      "timestamp_ms": 33929.254,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 33936.259,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 33937.004,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 33937.517,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 33938.573,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 33939.589,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 33940.279,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "f8",
+      "timestamp_ms": 34035.119,
+      "action": "release",
+      "held_duration_ms": 105.865,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 34165.178,
+      "action": "press"
+    },
+    {
+      "type": "mouse_press",
+      "button": "right",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 34679.238,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 34731.506,
+      "action": "release",
+      "held_duration_ms": 52.268,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 2655,
+      "y": 871,
+      "timestamp_ms": 34732.646,
+      "action": "release",
+      "held_duration_ms": 567.468,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 34734.014,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 34746.043,
+      "action": "release",
+      "held_duration_ms": 12.029,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 34935.362,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 34987.987,
+      "action": "release",
+      "held_duration_ms": 52.625,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 3027,
+      "y": 733,
+      "timestamp_ms": 35345.704,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 35898.102,
+      "action": "release",
+      "held_duration_ms": 552.398,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "tab",
+      "timestamp_ms": 36049.86,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 36101.732,
+      "action": "release",
+      "held_duration_ms": 51.872,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36402.818,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36454.018,
+      "action": "release",
+      "held_duration_ms": 51.2,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36536.301,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36587.583,
+      "action": "release",
+      "held_duration_ms": 51.283,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36638.868,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36690.205,
+      "action": "release",
+      "held_duration_ms": 51.336,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36741.447,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36793.049,
+      "action": "release",
+      "held_duration_ms": 51.602,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36844.95,
+      "action": "press"
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36896.488,
+      "action": "release",
+      "held_duration_ms": 51.537,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36947.841,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 36949.35,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 36956.296,
+      "action": "release",
+      "held_duration_ms": 6.945,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 36973.409,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 36980.611,
+      "action": "release",
+      "held_duration_ms": 7.202,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 36997.121,
+      "action": "release",
+      "held_duration_ms": 49.28,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 36998.215,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37004.693,
+      "action": "release",
+      "held_duration_ms": 6.477,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37021.87,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37029.279,
+      "action": "release",
+      "held_duration_ms": 7.409,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37045.664,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37047.226,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37054.118,
+      "action": "release",
+      "held_duration_ms": 6.892,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37071.408,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37079.767,
+      "action": "release",
+      "held_duration_ms": 8.36,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37096.516,
+      "action": "release",
+      "held_duration_ms": 50.852,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37098.883,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37106.103,
+      "action": "release",
+      "held_duration_ms": 7.22,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37123.674,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37131.389,
+      "action": "release",
+      "held_duration_ms": 7.714,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37148.267,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37150.696,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37157.631,
+      "action": "release",
+      "held_duration_ms": 6.935,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37175.646,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37183.089,
+      "action": "release",
+      "held_duration_ms": 7.444,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37199.62,
+      "action": "release",
+      "held_duration_ms": 51.352,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37201.739,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37208.943,
+      "action": "release",
+      "held_duration_ms": 7.204,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37226.513,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37235.633,
+      "action": "release",
+      "held_duration_ms": 9.119,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37259.783,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37262.693,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37270.76,
+      "action": "release",
+      "held_duration_ms": 8.067,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37288.909,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37295.957,
+      "action": "release",
+      "held_duration_ms": 7.048,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37313.113,
+      "action": "release",
+      "held_duration_ms": 53.33,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37315.093,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37323.524,
+      "action": "release",
+      "held_duration_ms": 8.431,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37340.31,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37348.068,
+      "action": "release",
+      "held_duration_ms": 7.758,
+      "orphan": false
+    },
+    {
+      "type": "mouse_press",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37364.336,
+      "action": "press"
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37366.191,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37374.575,
+      "action": "release",
+      "held_duration_ms": 8.384,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37392.346,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37399.907,
+      "action": "release",
+      "held_duration_ms": 7.561,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 37416.36,
+      "action": "release",
+      "held_duration_ms": 52.024,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37418.033,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37425.416,
+      "action": "release",
+      "held_duration_ms": 7.383,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37442.824,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37450.531,
+      "action": "release",
+      "held_duration_ms": 7.707,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37468.869,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37476.37,
+      "action": "release",
+      "held_duration_ms": 7.502,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37493.24,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37500.957,
+      "action": "release",
+      "held_duration_ms": 7.717,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37518.35,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37525.491,
+      "action": "release",
+      "held_duration_ms": 7.141,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37542.728,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37551.098,
+      "action": "release",
+      "held_duration_ms": 8.369,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37568.164,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37575.687,
+      "action": "release",
+      "held_duration_ms": 7.523,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37594.307,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37601.777,
+      "action": "release",
+      "held_duration_ms": 7.469,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37619.368,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37627.594,
+      "action": "release",
+      "held_duration_ms": 8.226,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37645.436,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37652.28,
+      "action": "release",
+      "held_duration_ms": 6.844,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37669.333,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37677.86,
+      "action": "release",
+      "held_duration_ms": 8.527,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37695.282,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37702.153,
+      "action": "release",
+      "held_duration_ms": 6.871,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37719.258,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37726.395,
+      "action": "release",
+      "held_duration_ms": 7.138,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37743.234,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37750.301,
+      "action": "release",
+      "held_duration_ms": 7.067,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37768.02,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37774.695,
+      "action": "release",
+      "held_duration_ms": 6.675,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37792.147,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37799.48,
+      "action": "release",
+      "held_duration_ms": 7.334,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37816.601,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37823.62,
+      "action": "release",
+      "held_duration_ms": 7.019,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37840.48,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37847.19,
+      "action": "release",
+      "held_duration_ms": 6.71,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37864.784,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37872.1,
+      "action": "release",
+      "held_duration_ms": 7.316,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37889.141,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37896.086,
+      "action": "release",
+      "held_duration_ms": 6.946,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37913.324,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37920.56,
+      "action": "release",
+      "held_duration_ms": 7.236,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37937.795,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37944.886,
+      "action": "release",
+      "held_duration_ms": 7.091,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37962.078,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37968.613,
+      "action": "release",
+      "held_duration_ms": 6.534,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 37986.034,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 37993.018,
+      "action": "release",
+      "held_duration_ms": 6.984,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38009.98,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38017.249,
+      "action": "release",
+      "held_duration_ms": 7.268,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38034.243,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38040.944,
+      "action": "release",
+      "held_duration_ms": 6.701,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38058.964,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38066.224,
+      "action": "release",
+      "held_duration_ms": 7.26,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38083.258,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38090.284,
+      "action": "release",
+      "held_duration_ms": 7.026,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38107.259,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38114.787,
+      "action": "release",
+      "held_duration_ms": 7.528,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38132.087,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38138.751,
+      "action": "release",
+      "held_duration_ms": 6.664,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38155.916,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38163.071,
+      "action": "release",
+      "held_duration_ms": 7.155,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38180.337,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38187.161,
+      "action": "release",
+      "held_duration_ms": 6.824,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38204.483,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38211.681,
+      "action": "release",
+      "held_duration_ms": 7.198,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38228.624,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38235.362,
+      "action": "release",
+      "held_duration_ms": 6.738,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38253.211,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38261.613,
+      "action": "release",
+      "held_duration_ms": 8.402,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38278.925,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38286.066,
+      "action": "release",
+      "held_duration_ms": 7.141,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38303.094,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38310.191,
+      "action": "release",
+      "held_duration_ms": 7.097,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38327.102,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38334.306,
+      "action": "release",
+      "held_duration_ms": 7.204,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38351.445,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38358.291,
+      "action": "release",
+      "held_duration_ms": 6.847,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38375.75,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38382.886,
+      "action": "release",
+      "held_duration_ms": 7.136,
+      "orphan": false
+    },
+    {
+      "type": "key_press",
+      "key": "e",
+      "timestamp_ms": 38400.053,
+      "action": "press"
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38407.506,
+      "action": "release",
+      "held_duration_ms": 7.453,
+      "orphan": false
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 38424.244,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "left",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 38424.824,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "mouse_release",
+      "button": "right",
+      "x": 867,
+      "y": 1146,
+      "timestamp_ms": 38425.15,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "e",
+      "timestamp_ms": 38425.935,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "q",
+      "timestamp_ms": 38426.283,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    },
+    {
+      "type": "key_release",
+      "key": "tab",
+      "timestamp_ms": 38426.841,
+      "action": "release",
+      "held_duration_ms": 0,
+      "orphan": true
+    }
+  ]
+}

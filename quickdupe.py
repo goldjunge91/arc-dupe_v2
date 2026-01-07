@@ -1536,8 +1536,9 @@ class QuickDupeApp:
         is_disconnected = False
         gp = get_gamepad()
 
-        if gp is None:
-            print("[KEYDOOR] Skipping - ViGEmBus not installed")
+        # Only require gamepad if NOT using drag drop
+        if gp is None and not self.use_drag_drop_var.get():
+            print("[KEYDOOR] Skipping - ViGEmBus not installed (enable drag drop or install ViGEmBus)")
             self.root.after(0, lambda: self.dc_status_var.set("ERROR: Install ViGEmBus"))
             self.root.after(0, lambda: self.dc_status_label.config(foreground="red"))
             self.keydoor_running = False
@@ -1557,8 +1558,15 @@ class QuickDupeApp:
         is_disconnected = True
 
         # ===== Drop item (Xbox X or drag fallback) =====
+        print(f"[KEYDOOR] use_drag_drop_var = {self.use_drag_drop_var.get()}")
         if self.use_drag_drop_var.get():
-            # Drag fallback using pynput
+            # Drag fallback using pynput - need to open inventory first
+            print(f"[KEYDOOR] Opening inventory...")
+            pynput_keyboard.press(Key.tab)
+            time.sleep(0.30)
+            pynput_keyboard.release(Key.tab)
+            time.sleep(0.12)
+
             print(f"[KEYDOOR] Using drag drop: {self.keydoor_drag_start} → {self.keydoor_drag_end}")
 
             # Clear any stuck mouse state first
