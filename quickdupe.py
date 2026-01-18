@@ -312,6 +312,12 @@ class QuickDupeApp:
         self.untitled1_stop = False
         self.untitled1_hotkey_registered = None
         self.recording_untitled1 = False
+        # Ghost Attachment state
+        self.ghost_running = False
+        self.ghost_hotkey_registered = None
+        self.recording_ghost = False
+        # Stop All state
+        self.recording_stop = False
         # Quick disconnect state
         self.test_disconnected = False
         self.tampering = False
@@ -329,6 +335,11 @@ class QuickDupeApp:
         self.recording_mine = False
         self.recording_espam = False
         self.recording_drag = False
+        self._recording_previous_value = None  # Store previous value for ESC cancel
+        self._drag_recording_cancelled = False  # For ESC cancel of drag recordings
+        self._mine_recording_cancelled = False  # For ESC cancel of mine recordings
+        self._um1_recording_cancelled = False  # For ESC cancel of ammo recordings
+        self._ghost_recording_cancelled = False  # For ESC cancel of ghost recordings
         self.drag_mouse_listener = None
         self.listening = True  # Always listening
 
@@ -965,6 +976,14 @@ class QuickDupeApp:
         self.throwable_repeat_var = tk.BooleanVar(value=self.config.get("throwable_repeat", False))
         ttk.Checkbutton(frame, text="Auto (loop until pressed again)", variable=self.throwable_repeat_var, command=self.save_settings).pack(anchor='w', padx=10, pady=5)
 
+        # Optional Q at start
+        self.throw_q_at_start_var = tk.BooleanVar(value=self.config.get("throw_q_at_start", True))
+        ttk.Checkbutton(frame, text="Press Q to equip at start", variable=self.throw_q_at_start_var, command=self.save_settings).pack(anchor='w', padx=10, pady=2)
+
+        # Optional E pickup
+        self.throw_e_pickup_var = tk.BooleanVar(value=self.config.get("throw_e_pickup", True))
+        ttk.Checkbutton(frame, text="Press E to pickup", variable=self.throw_e_pickup_var, command=self.save_settings).pack(anchor='w', padx=10, pady=2)
+
         # Throwable Timings
         self.create_slider(frame, "Throw hold time:", "throw_hold_time", 45, 10, 200, "ms")
         self.create_slider(frame, "Delay before DC:", "throw_dc_delay_before", 40, 0, 200, "ms", bold=True)
@@ -1179,8 +1198,11 @@ class QuickDupeApp:
 
         self.create_slider(frame, "Delay before DC:", "mine_dc_delay", 50, 0, 500, "ms", bold=True)
         self.create_slider(frame, "X hold (drop):", "mine_x_hold", 817, 100, 1500, "ms")
+        self.create_slider(frame, "Pre-close delay:", "mine_pre_close", 100, 0, 500, "ms")
+        self.create_slider(frame, "TAB hold (close):", "mine_tab_hold", 70, 20, 300, "ms")
+        self.create_slider(frame, "Close to reconnect:", "mine_close_reconnect", 940, 100, 2000, "ms", bold=True)
         self.create_slider(frame, "Reconnect to click:", "mine_click_delay", 50, 0, 500, "ms", bold=True)
-        self.create_slider(frame, "Dupe click hold:", "mine_pickup_hold", 1800, 100, 3000, "ms")
+        self.create_slider(frame, "Dupe click hold:", "mine_pickup_hold", 1800, 100, 3000, "ms", bold=True)
         self.create_slider(frame, "Delay before E:", "mine_e_delay", 80, 0, 1000, "ms")
         self.create_slider(frame, "Delay before loop:", "mine_loop_delay", 800, 0, 2000, "ms")
 
@@ -1254,7 +1276,7 @@ class QuickDupeApp:
 
         self.um1_record_seq_btn = ttk.Button(um1_pos_frame, text="Record Sequence", width=16, command=self._start_um1_sequence_recording)
         self.um1_record_seq_btn.pack(side='left', padx=2)
-        ttk.Label(um1_pos_frame, text="(Right-click → Left-click → Drag)", font=("Arial", 8), foreground='#888888').pack(side='left', padx=5)
+        ttk.Label(um1_pos_frame, text="(Right-click, Left-click, Drag)", font=("Arial", 8), foreground='#888888').pack(side='left', padx=5)
 
         self.um1_pos_var = tk.StringVar()
         self._update_um1_pos_display()
@@ -1284,6 +1306,49 @@ class QuickDupeApp:
         self.untitled1_status_var = tk.StringVar(value="Ready")
         self.untitled1_status_label = ttk.Label(frame, textvariable=self.untitled1_status_var, style='Dim.TLabel')
         self.untitled1_status_label.pack(pady=5)
+
+        ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
+
+        # ===== GHOST ATTACHMENT SECTION =====
+        ghost_header = ttk.Frame(frame)
+        ghost_header.pack(pady=(5, 5))
+        ttk.Label(ghost_header, text="── Ghost Attachment ──", style='Header.TLabel').pack(side='left')
+        ghost_info = ttk.Label(ghost_header, text=" (?)", foreground='#888888', cursor='hand2')
+        ghost_info.pack(side='left')
+        self._add_tooltip(ghost_info, "Allows you to safe pocket your attachments whilst still reaping the benefits of using them.")
+
+        # Hotkey row
+        ghost_hk_frame = ttk.Frame(frame)
+        ghost_hk_frame.pack(fill='x', padx=10, pady=5)
+        ttk.Label(ghost_hk_frame, text="Hotkey:").pack(side='left')
+        self.ghost_hotkey_var = tk.StringVar(value=self.config.get("ghost_hotkey", ""))
+        self.ghost_hotkey_entry = tk.Entry(ghost_hk_frame, textvariable=self.ghost_hotkey_var, width=15, state="readonly",
+                                           bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+        self.ghost_hotkey_entry.pack(side='left', padx=5)
+        self.ghost_record_btn = ttk.Button(ghost_hk_frame, text="Set", width=6, command=self.start_recording_ghost)
+        self.ghost_record_btn.pack(side='left', padx=5)
+
+        # Position recording - single guided sequence
+        ghost_pos_frame = ttk.Frame(frame)
+        ghost_pos_frame.pack(fill='x', padx=10, pady=2)
+
+        # Load saved positions
+        self.ghost_item_pos = tuple(self.config.get("ghost_item_pos", [1777, 975]))
+        self.ghost_context_pos = tuple(self.config.get("ghost_context_pos", [1928, 1389]))
+        self.ghost_drag_start = tuple(self.config.get("ghost_drag_start", [1693, 990]))
+        self.ghost_drag_end = tuple(self.config.get("ghost_drag_end", [2268, 1150]))
+
+        self.ghost_record_seq_btn = ttk.Button(ghost_pos_frame, text="Record Sequence", width=16, command=self._start_ghost_sequence_recording)
+        self.ghost_record_seq_btn.pack(side='left', padx=2)
+        ttk.Label(ghost_pos_frame, text="(Right-click, Detach mods, Drag)", font=("Arial", 8), foreground='#888888').pack(side='left', padx=5)
+
+        self.ghost_pos_var = tk.StringVar()
+        self._update_ghost_pos_display()
+        ttk.Label(frame, textvariable=self.ghost_pos_var, font=("Consolas", 7)).pack(anchor='w', padx=10)
+
+        self.ghost_status_var = tk.StringVar(value="Ready")
+        self.ghost_status_label = ttk.Label(frame, textvariable=self.ghost_status_var, style='Dim.TLabel')
+        self.ghost_status_label.pack(pady=5)
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
@@ -1319,8 +1384,16 @@ class QuickDupeApp:
         # ===== RESET ALL =====
         ttk.Button(frame, text="⚠ Reset ALL Settings", command=self.reset_all_settings).pack(pady=5)
 
-        # ===== FOOTER =====
-        ttk.Label(frame, text="Press ESC to stop all macros", style='Dim.TLabel').pack(pady=(20, 10))
+        # ===== STOP ALL HOTKEY =====
+        stop_frame = ttk.Frame(frame)
+        stop_frame.pack(fill='x', padx=10, pady=(15, 5))
+        ttk.Label(stop_frame, text="Stop All:").pack(side='left')
+        self.stop_hotkey_var = tk.StringVar(value=self.config.get("stop_hotkey", "esc"))
+        self.stop_hotkey_entry = tk.Entry(stop_frame, textvariable=self.stop_hotkey_var, width=15, state="readonly",
+                                          bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+        self.stop_hotkey_entry.pack(side='left', padx=5)
+        self.stop_record_btn = ttk.Button(stop_frame, text="Set", width=6, command=self.start_recording_stop)
+        self.stop_record_btn.pack(side='left', padx=5)
 
         # ===== RESIZE GRIP (bottom of window) =====
         resize_grip = tk.Frame(self.root, bg='#2d2d2d', height=8, cursor='sb_v_double_arrow')
@@ -1408,6 +1481,7 @@ class QuickDupeApp:
             ttk.Label(row, text=unit).pack(side='left')
 
     def start_recording_mine(self):
+        self._recording_previous_value = self.mine_hotkey_var.get()
         self.recording_mine = True
         self.recording_dc = False
         self.recording_throwable = False
@@ -1422,20 +1496,23 @@ class QuickDupeApp:
         self.mine_record_btn.config(text="...")
         self.mine_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_mine_drag_recording(self):
         """Record mine drag path or slot position based on drag drop setting"""
+        self._mine_recording_cancelled = False
         if self.use_drag_drop_var.get():
-            self.show_overlay("10 sec - then click & drag item to drop zone")
+            self.show_overlay("10 sec - click & drag (ESC=cancel)")
             self._mine_drag_countdown(10, is_drag=True)
         else:
-            self.show_overlay("10 sec - then click inventory slot")
+            self.show_overlay("10 sec - click slot (ESC=cancel)")
             self._mine_drag_countdown(10, is_drag=False)
 
     def _mine_drag_countdown(self, seconds_left, is_drag=True):
+        if self._mine_recording_cancelled:
+            return  # Cancelled
         if seconds_left > 0:
-            self.show_overlay(f"Get ready... {seconds_left}")
+            self.show_overlay(f"Get ready... {seconds_left} (ESC=cancel)")
             self.root.after(1000, lambda: self._mine_drag_countdown(seconds_left - 1, is_drag))
         else:
             self._start_mine_drag_listener(is_drag)
@@ -1443,11 +1520,18 @@ class QuickDupeApp:
     def _start_mine_drag_listener(self, is_drag=True):
         from pynput import mouse
 
+        if self._mine_recording_cancelled:
+            return
+
+        listener_ref = [None]
+
         if is_drag:
-            self.show_overlay("DRAG NOW!")
+            self.show_overlay("DRAG NOW! (ESC=cancel)")
             drag_start_pos = [None, None]
 
             def on_click(x, y, button, pressed):
+                if self._mine_recording_cancelled:
+                    return False  # Stop listener
                 if button != mouse.Button.left:
                     return
                 if pressed:
@@ -1466,11 +1550,14 @@ class QuickDupeApp:
                         save_config(self.config)
                         self.show_overlay(f"Saved! {start} → {end}")
                         print(f"[MINE DRAG] Recorded: {start} → {end}")
+                        keyboard.unhook(esc_hook)
                         return False
         else:
-            self.show_overlay("CLICK SLOT NOW!")
+            self.show_overlay("CLICK SLOT NOW! (ESC=cancel)")
 
             def on_click(x, y, button, pressed):
+                if self._mine_recording_cancelled:
+                    return False  # Stop listener
                 if button != mouse.Button.left:
                     return
                 if pressed:
@@ -1480,12 +1567,24 @@ class QuickDupeApp:
                     save_config(self.config)
                     self.show_overlay(f"Saved slot: ({x},{y})")
                     print(f"[MINE SLOT] Recorded: ({x},{y})")
+                    keyboard.unhook(esc_hook)
                     return False
 
-        listener = mouse.Listener(on_click=on_click)
-        listener.start()
+        listener_ref[0] = mouse.Listener(on_click=on_click)
+        listener_ref[0].start()
+
+        # ESC to cancel
+        def on_esc():
+            self._mine_recording_cancelled = True
+            if listener_ref[0]:
+                listener_ref[0].stop()
+            self.root.after(0, lambda: self.show_overlay("Recording cancelled"))
+            keyboard.unhook(esc_hook)
+
+        esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
 
     def start_recording_espam(self):
+        self._recording_previous_value = self.espam_hotkey_var.get()
         self.recording_espam = True
         self.recording_dc = False
         self.recording_throwable = False
@@ -1500,9 +1599,10 @@ class QuickDupeApp:
         self.espam_record_btn.config(text="...")
         self.espam_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_triggernade(self):
+        self._recording_previous_value = self.triggernade_hotkey_var.get()
         self.recording_triggernade = True
         self.recording_dc = False
         self.recording_throwable = False
@@ -1517,7 +1617,7 @@ class QuickDupeApp:
         self.triggernade_record_btn.config(text="...")
         self.triggernade_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_drag_recording(self):
         """Start recording drag coordinates - 10 sec countdown, then waits for mouse down/up"""
@@ -1595,12 +1695,18 @@ class QuickDupeApp:
         """Listen for drag and record start/end positions only"""
         from pynput import mouse
 
-        self.show_overlay("Click & drag item to drop zone NOW!")
+        if self._drag_recording_cancelled:
+            return
+
+        self.show_overlay("Click & drag NOW! (ESC=cancel)")
 
         state = {'start_pos': None}
         listener_ref = [None]
 
         def on_click(x, y, button, pressed):
+            if self._drag_recording_cancelled:
+                return False  # Stop listener
+
             if button != mouse.Button.left:
                 return
 
@@ -1632,32 +1738,47 @@ class QuickDupeApp:
 
                     save_config(self.config)
                     self.show_overlay(f"Saved! {start} → {end}")
+                    keyboard.unhook(esc_hook)
                     return False  # Stop listener
 
         listener_ref[0] = mouse.Listener(on_click=on_click)
         listener_ref[0].start()
 
+        # ESC to cancel
+        def on_esc():
+            self._drag_recording_cancelled = True
+            if listener_ref[0]:
+                listener_ref[0].stop()
+            self.root.after(0, lambda: self.show_overlay("Recording cancelled"))
+            keyboard.unhook(esc_hook)
+
+        esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
+
     def start_keydoor_drag_recording(self):
         """Record keydoor position or drag path depending on mode"""
+        self._drag_recording_cancelled = False
         if self.use_drag_drop_var.get():
-            self.show_overlay("10 sec - then click & drag item to drop zone")
+            self.show_overlay("10 sec - click & drag (ESC=cancel)")
             self._drag_countdown(10, 'keydoor', record_drag=True)
         else:
-            self.show_overlay("10 sec - then click on item position")
+            self.show_overlay("10 sec - click position (ESC=cancel)")
             self._drag_countdown(10, 'keydoor', record_drag=False)
 
     def start_trig_drag_recording(self):
         """Record triggernade position or drag path depending on mode"""
+        self._drag_recording_cancelled = False
         if self.use_drag_drop_var.get():
-            self.show_overlay("10 sec - then click & drag item to drop zone")
+            self.show_overlay("10 sec - click & drag (ESC=cancel)")
             self._drag_countdown(10, 'triggernade', record_drag=True)
         else:
-            self.show_overlay("10 sec - then click on item position")
+            self.show_overlay("10 sec - click position (ESC=cancel)")
             self._drag_countdown(10, 'triggernade', record_drag=False)
 
     def _drag_countdown(self, seconds_left, target, record_drag=True):
+        if self._drag_recording_cancelled:
+            return  # Cancelled
         if seconds_left > 0:
-            self.show_overlay(f"Get ready... {seconds_left}")
+            self.show_overlay(f"Get ready... {seconds_left} (ESC=cancel)")
             self.root.after(1000, lambda: self._drag_countdown(seconds_left - 1, target, record_drag))
         else:
             if record_drag:
@@ -1669,11 +1790,17 @@ class QuickDupeApp:
         """Listen for single click to record position (for ViGEmBus mode)"""
         from pynput import mouse
 
-        self.show_overlay("Click on item position NOW!")
+        if self._drag_recording_cancelled:
+            return
+
+        self.show_overlay("Click position NOW! (ESC=cancel)")
 
         listener_ref = [None]
 
         def on_click(x, y, button, pressed):
+            if self._drag_recording_cancelled:
+                return False  # Stop listener
+
             if button != mouse.Button.left:
                 return
             if not pressed:  # On release
@@ -1695,10 +1822,21 @@ class QuickDupeApp:
                 print(f"[CONFIG] Saved to: {CONFIG_FILE}")
                 print(f"[CONFIG] keydoor_slot_pos = {self.config.get('keydoor_slot_pos')}")
                 self.show_overlay(f"Position saved: ({x}, {y})")
+                keyboard.unhook(esc_hook)
                 return False  # Stop listener
 
         listener_ref[0] = mouse.Listener(on_click=on_click)
         listener_ref[0].start()
+
+        # ESC to cancel
+        def on_esc():
+            self._drag_recording_cancelled = True
+            if listener_ref[0]:
+                listener_ref[0].stop()
+            self.root.after(0, lambda: self.show_overlay("Recording cancelled"))
+            keyboard.unhook(esc_hook)
+
+        esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
 
     def start_slot_recording(self):
         """Record drop position - click where the item slot is"""
@@ -1739,18 +1877,22 @@ class QuickDupeApp:
 
     def _update_um1_pos_display(self):
         """Update the Ammo position display"""
-        self.um1_pos_var.set(f"Item:{self.um1_item_pos} Context:{self.um1_context_pos} Drag:{self.um1_drag_start}→{self.um1_drag_end}")
+        self.um1_pos_var.set(f"{self.um1_item_pos}, {self.um1_context_pos}, {self.um1_drag_start}-{self.um1_drag_end}")
 
     def _start_um1_sequence_recording(self):
         """Start guided sequence recording for Ammo"""
         from pynput import mouse
 
-        self.um1_record_seq_btn.config(text="Recording...")
-        self.show_overlay("Step 1: RIGHT-CLICK on item")
+        self.um1_record_seq_btn.config(text="Recording... (ESC=cancel)")
+        self.show_overlay("Step 1: RIGHT-CLICK on item (ESC=cancel)")
         self._um1_record_step = 1
         self._um1_drag_started = False  # Track if drag press was captured
+        self._um1_recording_cancelled = False
 
         def on_click(x, y, button, pressed):
+            if self._um1_recording_cancelled:
+                return False  # Stop listener
+
             if self._um1_record_step == 1:
                 # Step 1: Right click on item
                 if pressed and button == mouse.Button.right:
@@ -1786,11 +1928,22 @@ class QuickDupeApp:
                         self.root.after(0, lambda: self.show_overlay("Sequence recorded!"))
                         return False  # Stop listener
 
-        listener = mouse.Listener(on_click=on_click)
-        listener.start()
+        mouse_listener = mouse.Listener(on_click=on_click)
+        mouse_listener.start()
+
+        # ESC to cancel
+        def on_esc():
+            self._um1_recording_cancelled = True
+            mouse_listener.stop()
+            self.root.after(0, lambda: self.um1_record_seq_btn.config(text="Record Sequence"))
+            self.root.after(0, lambda: self.show_overlay("Recording cancelled"))
+            keyboard.unhook(esc_hook)
+
+        esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
 
     def start_recording_untitled1(self):
         """Start recording hotkey for Ammo"""
+        self._recording_previous_value = self.untitled1_hotkey_var.get()
         self.recording_untitled1 = True
         self.recording_dc = False
         self.recording_throwable = False
@@ -1806,9 +1959,123 @@ class QuickDupeApp:
         self.untitled1_record_btn.config(text="...")
         self.untitled1_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
+
+    def _update_ghost_pos_display(self):
+        """Update the Ghost Attachment position display"""
+        self.ghost_pos_var.set(f"{self.ghost_item_pos}, {self.ghost_context_pos}, {self.ghost_drag_start}-{self.ghost_drag_end}")
+
+    def _start_ghost_sequence_recording(self):
+        """Start guided sequence recording for Ghost Attachment"""
+        from pynput import mouse
+
+        self.ghost_record_seq_btn.config(text="Recording... (ESC=cancel)")
+        self.show_overlay("Step 1: RIGHT-CLICK on item (ESC=cancel)")
+        self._ghost_record_step = 1
+        self._ghost_drag_started = False
+        self._ghost_recording_cancelled = False
+
+        def on_click(x, y, button, pressed):
+            if self._ghost_recording_cancelled:
+                return False  # Stop listener
+
+            if self._ghost_record_step == 1:
+                # Step 1: Right click on item
+                if pressed and button == mouse.Button.right:
+                    self.ghost_item_pos = (x, y)
+                    self.config["ghost_item_pos"] = [x, y]
+                    self._ghost_record_step = 2
+                    self.root.after(0, lambda: self.show_overlay("Step 2: Click DETACH MODS"))
+
+            elif self._ghost_record_step == 2:
+                # Step 2: Left click on detach mods
+                if pressed and button == mouse.Button.left:
+                    self.ghost_context_pos = (x, y)
+                    self.config["ghost_context_pos"] = [x, y]
+                    self._ghost_record_step = 3
+                    self._ghost_drag_started = False
+                    self.root.after(0, lambda: self.show_overlay("Step 3: DRAG item to empty slot"))
+
+            elif self._ghost_record_step == 3:
+                # Step 3: Drag - capture start on press, end on release
+                if button == mouse.Button.left:
+                    if pressed:
+                        self.ghost_drag_start = (x, y)
+                        self.config["ghost_drag_start"] = [x, y]
+                        self._ghost_drag_started = True
+                        self.root.after(0, lambda: self.show_overlay("Now RELEASE to end drag"))
+                    elif self._ghost_drag_started:
+                        self.ghost_drag_end = (x, y)
+                        self.config["ghost_drag_end"] = [x, y]
+                        save_config(self.config)
+                        self.root.after(0, self._update_ghost_pos_display)
+                        self.root.after(0, lambda: self.ghost_record_seq_btn.config(text="Record Sequence"))
+                        self.root.after(0, lambda: self.show_overlay("Sequence recorded!"))
+                        return False  # Stop listener
+
+        mouse_listener = mouse.Listener(on_click=on_click)
+        mouse_listener.start()
+
+        # ESC to cancel
+        def on_esc():
+            self._ghost_recording_cancelled = True
+            mouse_listener.stop()
+            self.root.after(0, lambda: self.ghost_record_seq_btn.config(text="Record Sequence"))
+            self.root.after(0, lambda: self.show_overlay("Recording cancelled"))
+            keyboard.unhook(esc_hook)
+
+        esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
+
+    def start_recording_ghost(self):
+        """Start recording hotkey for Ghost Attachment"""
+        print("[DEBUG] start_recording_ghost() called")
+        self._recording_previous_value = self.ghost_hotkey_var.get()
+        self.recording_ghost = True
+        self.recording_stop = False
+        self.recording_untitled1 = False
+        self.recording_dc = False
+        self.recording_throwable = False
+        self.recording_triggernade = False
+        self.recording_espam = False
+        self.recording_mine = False
+        self.recording_dc_both = False
+        self.recording_dc_outbound = False
+        self.recording_dc_inbound = False
+        self.recording_tamper = False
+        self.recording_minimize = False
+        self.recording_tray = False
+        self.ghost_record_btn.config(text="...")
+        self.ghost_hotkey_var.set("Press key...")
+        self.root.bind("<KeyPress>", self.on_key_press)
+        self.root.focus_force()
+        print(f"[DEBUG] recording_ghost={self.recording_ghost}, bound KeyPress, focus forced")
+
+    def start_recording_stop(self):
+        """Start recording hotkey for Stop All"""
+        print("[DEBUG] start_recording_stop() called")
+        self._recording_previous_value = self.stop_hotkey_var.get()
+        self.recording_stop = True
+        self.recording_ghost = False
+        self.recording_untitled1 = False
+        self.recording_dc = False
+        self.recording_throwable = False
+        self.recording_triggernade = False
+        self.recording_espam = False
+        self.recording_mine = False
+        self.recording_dc_both = False
+        self.recording_dc_outbound = False
+        self.recording_dc_inbound = False
+        self.recording_tamper = False
+        self.recording_minimize = False
+        self.recording_tray = False
+        self.stop_record_btn.config(text="...")
+        self.stop_hotkey_var.set("Press key...")
+        self.root.bind("<KeyPress>", self.on_key_press)
+        self.root.focus_force()
+        print(f"[DEBUG] recording_stop={self.recording_stop}, bound KeyPress, focus forced")
 
     def start_recording_dc(self):
+        self._recording_previous_value = self.dc_hotkey_var.get()
         self.recording_dc = True
         self.recording_throwable = False
         self.recording_triggernade = False
@@ -1822,9 +2089,10 @@ class QuickDupeApp:
         self.dc_record_btn.config(text="...")
         self.dc_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_throwable(self):
+        self._recording_previous_value = self.throwable_hotkey_var.get()
         self.recording_throwable = True
         self.recording_dc = False
         self.recording_triggernade = False
@@ -1838,10 +2106,12 @@ class QuickDupeApp:
         self.throwable_record_btn.config(text="...")
         self.throwable_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def on_key_press(self, event):
-        if not self.recording_dc and not self.recording_throwable and not self.recording_triggernade and not self.recording_mine and not self.recording_espam and not self.recording_dc_both and not self.recording_dc_outbound and not self.recording_dc_inbound and not self.recording_tamper and not self.recording_minimize and not self.recording_tray and not self.recording_untitled1:
+        print(f"[DEBUG] on_key_press called: key={event.keysym}, recording_ghost={self.recording_ghost}, recording_stop={self.recording_stop}")
+        if not self.recording_dc and not self.recording_throwable and not self.recording_triggernade and not self.recording_mine and not self.recording_espam and not self.recording_dc_both and not self.recording_dc_outbound and not self.recording_dc_inbound and not self.recording_tamper and not self.recording_minimize and not self.recording_tray and not self.recording_untitled1 and not self.recording_ghost and not self.recording_stop:
+            print("[DEBUG] on_key_press: early return - no recording flags set")
             return
 
         # Use keyboard library to check modifiers (tkinter state flags are unreliable)
@@ -1931,6 +2201,14 @@ class QuickDupeApp:
                 self.untitled1_hotkey_var.set("")
                 self.untitled1_record_btn.config(text="Set")
                 self.recording_untitled1 = False
+            elif self.recording_ghost:
+                self.ghost_hotkey_var.set("")
+                self.ghost_record_btn.config(text="Set")
+                self.recording_ghost = False
+            elif self.recording_stop:
+                self.stop_hotkey_var.set("")
+                self.stop_record_btn.config(text="Set")
+                self.recording_stop = False
             elif self.recording_dc_both:
                 self.dc_both_hotkey_var.set("")
                 self.dc_both_record_btn.config(text="Set")
@@ -1956,6 +2234,7 @@ class QuickDupeApp:
                 self.tray_record_btn.config(text="Set")
                 self.recording_tray = False
             self.root.unbind("<KeyPress>")
+            self.root.update_idletasks()  # Force GUI refresh
             self.save_settings()
             self.register_hotkeys()
             return
@@ -1972,6 +2251,9 @@ class QuickDupeApp:
                 self.triggernade_hotkey_var,
                 self.mine_hotkey_var,
                 self.espam_hotkey_var,
+                self.untitled1_hotkey_var,
+                self.ghost_hotkey_var,
+                self.stop_hotkey_var,
                 self.dc_both_hotkey_var,
                 self.dc_outbound_hotkey_var,
                 self.dc_inbound_hotkey_var,
@@ -2007,6 +2289,14 @@ class QuickDupeApp:
                 self.untitled1_hotkey_var.set(hotkey)
                 self.untitled1_record_btn.config(text="Set")
                 self.recording_untitled1 = False
+            elif self.recording_ghost:
+                self.ghost_hotkey_var.set(hotkey)
+                self.ghost_record_btn.config(text="Set")
+                self.recording_ghost = False
+            elif self.recording_stop:
+                self.stop_hotkey_var.set(hotkey)
+                self.stop_record_btn.config(text="Set")
+                self.recording_stop = False
             elif self.recording_dc_both:
                 self.dc_both_hotkey_var.set(hotkey)
                 self.dc_both_record_btn.config(text="Set")
@@ -2032,6 +2322,7 @@ class QuickDupeApp:
                 self.tray_record_btn.config(text="Set")
                 self.recording_tray = False
             self.root.unbind("<KeyPress>")
+            self.root.update_idletasks()  # Force GUI refresh
             self.save_settings()
             self.register_hotkeys()
 
@@ -2102,6 +2393,7 @@ class QuickDupeApp:
 
     def start_recording_dc_both(self):
         """Start recording hotkey for DC both"""
+        self._recording_previous_value = self.dc_both_hotkey_var.get()
         self.recording_dc_both = True
         self.recording_dc_outbound = False
         self.recording_dc_inbound = False
@@ -2116,10 +2408,11 @@ class QuickDupeApp:
         self.dc_both_record_btn.config(text="...")
         self.dc_both_hotkey_var.set("...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_dc_outbound(self):
         """Start recording hotkey for DC outbound"""
+        self._recording_previous_value = self.dc_outbound_hotkey_var.get()
         self.recording_dc_outbound = True
         self.recording_dc_both = False
         self.recording_dc_inbound = False
@@ -2134,10 +2427,11 @@ class QuickDupeApp:
         self.dc_outbound_record_btn.config(text="...")
         self.dc_outbound_hotkey_var.set("...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_dc_inbound(self):
         """Start recording hotkey for DC inbound"""
+        self._recording_previous_value = self.dc_inbound_hotkey_var.get()
         self.recording_dc_inbound = True
         self.recording_dc_both = False
         self.recording_dc_outbound = False
@@ -2152,10 +2446,11 @@ class QuickDupeApp:
         self.dc_inbound_record_btn.config(text="...")
         self.dc_inbound_hotkey_var.set("...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_tamper(self):
         """Start recording hotkey for Tamper"""
+        self._recording_previous_value = self.tamper_hotkey_var.get()
         self.recording_tamper = True
         self.recording_dc_both = False
         self.recording_dc_outbound = False
@@ -2170,10 +2465,11 @@ class QuickDupeApp:
         self.tamper_record_btn.config(text="...")
         self.tamper_hotkey_var.set("...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_minimize(self):
         """Start recording hotkey for minimize window"""
+        self._recording_previous_value = self.minimize_hotkey_var.get()
         self.recording_minimize = True
         self.recording_tray = False
         self.recording_dc = False
@@ -2188,10 +2484,11 @@ class QuickDupeApp:
         self.minimize_record_btn.config(text="...")
         self.minimize_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def start_recording_tray(self):
         """Start recording hotkey for minimize to tray"""
+        self._recording_previous_value = self.tray_hotkey_var.get()
         self.recording_tray = True
         self.recording_minimize = False
         self.recording_dc = False
@@ -2206,7 +2503,7 @@ class QuickDupeApp:
         self.tray_record_btn.config(text="...")
         self.tray_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_set()
+        self.root.focus_force()
 
     def on_drag_drop_manual_toggle(self):
         """User manually toggled drag drop - remember their preference and update button text"""
@@ -2257,6 +2554,8 @@ class QuickDupeApp:
         # Throwable settings
         self.config["throwable_hotkey"] = self.throwable_hotkey_var.get()
         self.config["throwable_repeat"] = self.throwable_repeat_var.get()
+        self.config["throw_q_at_start"] = self.throw_q_at_start_var.get()
+        self.config["throw_e_pickup"] = self.throw_e_pickup_var.get()
         self.config["throw_hold_time"] = self.throw_hold_time_var.get()
         self.config["throw_dc_delay_before"] = self.throw_dc_delay_before_var.get()
         self.config["throw_wait_before_e"] = self.throw_wait_before_e_var.get()
@@ -2298,6 +2597,8 @@ class QuickDupeApp:
         # Ammo settings
         self.config["untitled1_hotkey"] = self.untitled1_hotkey_var.get()
         self.config["untitled1_repeat"] = self.untitled1_repeat_var.get()
+        # Ghost Attachment settings
+        self.config["ghost_hotkey"] = self.ghost_hotkey_var.get()
         # Quick disconnect hotkeys
         self.config["dc_both_hotkey"] = self.dc_both_hotkey_var.get()
         self.config["dc_outbound_hotkey"] = self.dc_outbound_hotkey_var.get()
@@ -2311,6 +2612,8 @@ class QuickDupeApp:
         # Window hotkeys
         self.config["minimize_hotkey"] = self.minimize_hotkey_var.get()
         self.config["tray_hotkey"] = self.tray_hotkey_var.get()
+        # Stop all hotkey
+        self.config["stop_hotkey"] = self.stop_hotkey_var.get()
         save_config(self.config)
 
     def reset_keydoor_defaults(self):
@@ -2361,16 +2664,9 @@ class QuickDupeApp:
         self.trig_dc_delay_var.set(10)  # Delay before DC
         self.trig_m1_before_interweave_var.set(5)  # 5 M1s before E interweave
         self.triggernade_q_spam_var.set(True)  # Q spam enabled by default
-        # Reset positions
-        self.trig_slot_pos = (3024, 669)
-        self.trig_drag_start = (3024, 669)
-        self.trig_drag_end = (550, 1247)
-        self.config["trig_slot_pos"] = [3024, 669]
-        self.config["trig_drag_start"] = [3024, 669]
-        self.config["trig_drag_end"] = [550, 1247]
-        self._update_record_button_text()
+        # Note: Positions are NOT reset - only timing parameters
         self.save_settings()
-        print("[RESET] Triggernade parameters reset to defaults")
+        print("[RESET] Triggernade parameters reset to defaults (positions preserved)")
 
     def reset_mine_defaults(self):
         """Reset all mine dupe timing parameters to defaults"""
@@ -2381,16 +2677,9 @@ class QuickDupeApp:
         self.mine_pickup_hold_var.set(1800)
         self.mine_e_delay_var.set(80)
         self.mine_loop_delay_var.set(800)
-        # Reset positions
-        self.mine_slot_pos = (2966, 1196)
-        self.mine_drag_start = (2966, 1196)
-        self.mine_drag_end = (1035, 1291)
-        self.config["mine_slot_pos"] = [2966, 1196]
-        self.config["mine_drag_start"] = [2966, 1196]
-        self.config["mine_drag_end"] = [1035, 1291]
-        self._update_record_button_text()
+        # Note: Positions are NOT reset - only timing parameters
         self.save_settings()
-        print("[RESET] Mine dupe parameters reset to defaults")
+        print("[RESET] Mine dupe parameters reset to defaults (positions preserved)")
 
     def reset_untitled1_defaults(self):
         """Reset Ammo timing parameters to defaults"""
@@ -2408,18 +2697,15 @@ class QuickDupeApp:
         self.um1_after_tab_close_var.set(61)
         self.um1_equip_hold_var.set(67)
         self.um1_loop_delay_var.set(300)
-        # Reset positions
-        self.um1_item_pos = (1777, 975)
-        self.um1_context_pos = (1928, 1389)
-        self.um1_drag_start = (1693, 990)
-        self.um1_drag_end = (2268, 1150)
-        self.config["um1_item_pos"] = [1777, 975]
-        self.config["um1_context_pos"] = [1928, 1389]
-        self.config["um1_drag_start"] = [1693, 990]
-        self.config["um1_drag_end"] = [2268, 1150]
-        self._update_um1_pos_display()
+        # Note: Positions are NOT reset - only timing parameters
         self.save_settings()
-        print("[RESET] Ammo parameters reset to defaults")
+        print("[RESET] Ammo parameters reset to defaults (positions preserved)")
+
+    def reset_ghost_defaults(self):
+        """Reset Ghost Attachment timing to defaults (positions preserved)"""
+        # Ghost Attachment has no timing parameters - only positions
+        # Positions are NOT reset per user preference
+        print("[RESET] Ghost Attachment - no timing parameters to reset (positions preserved)")
 
     def reset_all_settings(self):
         """Reset ALL settings including hotkeys and recordings to factory defaults"""
@@ -2431,7 +2717,8 @@ class QuickDupeApp:
         self.config = {}
         save_config(self.config)
 
-        # Reset all hotkeys
+        # Reset ALL hotkeys
+        print("[RESET] Clearing all hotkeys...")
         self.dc_hotkey_var.set("")
         self.throwable_hotkey_var.set("")
         self.triggernade_hotkey_var.set("")
@@ -2440,19 +2727,30 @@ class QuickDupeApp:
         self.dc_outbound_hotkey_var.set("")
         self.dc_inbound_hotkey_var.set("")
         self.tamper_hotkey_var.set("")
+        self.mine_hotkey_var.set("")
+        self.untitled1_hotkey_var.set("")
+        self.ghost_hotkey_var.set("")
+        self.stop_hotkey_var.set("esc")  # Default is esc
+        self.minimize_hotkey_var.set("")
+        self.tray_hotkey_var.set("")
+        print("[RESET] All hotkeys cleared")
 
         # Reset checkboxes
+        print("[RESET] Resetting checkboxes...")
         self.use_drag_drop_var.set(False)
         self.show_overlay_var.set(True)
         self.stay_on_top_var.set(False)
         self.throwable_repeat_var.set(True)
         self.triggernade_repeat_var.set(True)
 
-        # Reset all timing sliders and positions (these call _update_record_button_text)
+        # Reset ALL timing sliders and positions
+        print("[RESET] Resetting all timing defaults...")
         self.reset_keydoor_defaults()
         self.reset_throwable_defaults()
         self.reset_triggernade_defaults()
         self.reset_mine_defaults()
+        self.reset_untitled1_defaults()  # Ammo timing reset
+        self.reset_ghost_defaults()  # Ghost Attachment positions reset
 
         # Re-register hotkeys (will be empty now)
         self.register_hotkeys()
@@ -2480,6 +2778,12 @@ class QuickDupeApp:
         self.mine_hotkey_registered = None
         self.minimize_hotkey_registered = None
         self.tray_hotkey_registered = None
+        # Alt+hotkey for re-recording positions
+        self.dc_rerecord_registered = None
+        self.trig_rerecord_registered = None
+        self.mine_rerecord_registered = None
+        self.um1_rerecord_registered = None
+        self.ghost_rerecord_registered = None
 
         # Register ALL hotkeys
         dc_hk = self.dc_hotkey_var.get()
@@ -2533,6 +2837,14 @@ class QuickDupeApp:
             except Exception as e:
                 print(f"[HOTKEY] FAILED untitled1 '{untitled1_hk}': {e}")
 
+        ghost_hk = self.ghost_hotkey_var.get()
+        if ghost_hk and ghost_hk != "Press key...":
+            try:
+                self.ghost_hotkey_registered = keyboard.add_hotkey(ghost_hk, self.on_ghost_hotkey, suppress=False)
+                print(f"[HOTKEY] Ghost registered OK: '{ghost_hk}' -> {self.ghost_hotkey_registered}")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED ghost '{ghost_hk}': {e}")
+
         # Register quick disconnect hotkeys (use on_press_key so they work while other keys held)
         dc_both_hk = self.dc_both_hotkey_var.get()
         if dc_both_hk and dc_both_hk != "Press key..." and dc_both_hk != "...":
@@ -2584,16 +2896,66 @@ class QuickDupeApp:
             except Exception as e:
                 print(f"[HOTKEY] FAILED tray '{tray_hk}': {e}")
 
-        # Always register Escape as universal stop
-        try:
-            self.escape_hotkey_registered = keyboard.add_hotkey('esc', self.stop_all_macros, suppress=False)
-            print(f"[HOTKEY] Escape (stop all) registered OK: {self.escape_hotkey_registered}")
-        except Exception as e:
-            print(f"[HOTKEY] FAILED escape: {e}")
+        # Register configurable stop all hotkey
+        stop_hk = self.stop_hotkey_var.get()
+        if stop_hk and stop_hk != "Press key...":
+            try:
+                self.escape_hotkey_registered = keyboard.add_hotkey(stop_hk, self.stop_all_macros, suppress=False)
+                print(f"[HOTKEY] Stop All registered OK: '{stop_hk}' -> {self.escape_hotkey_registered}")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED stop all '{stop_hk}': {e}")
+
+        # Register Alt+hotkey variants for quick position re-recording
+        print("[HOTKEY] Registering Alt+hotkey re-record shortcuts...")
+
+        # Keydoor: Alt+hotkey = re-record position
+        if dc_hk and dc_hk != "Press key...":
+            try:
+                alt_dc_hk = f"alt+{dc_hk}" if not dc_hk.startswith("alt+") else dc_hk
+                self.dc_rerecord_registered = keyboard.add_hotkey(alt_dc_hk, self.start_keydoor_drag_recording, suppress=False)
+                print(f"[HOTKEY] Keydoor re-record registered: '{alt_dc_hk}'")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED keydoor re-record '{alt_dc_hk}': {e}")
+
+        # Triggernade: Alt+hotkey = re-record position
+        if trig_hk and trig_hk != "Press key...":
+            try:
+                alt_trig_hk = f"alt+{trig_hk}" if not trig_hk.startswith("alt+") else trig_hk
+                self.trig_rerecord_registered = keyboard.add_hotkey(alt_trig_hk, self.start_trig_drag_recording, suppress=False)
+                print(f"[HOTKEY] Triggernade re-record registered: '{alt_trig_hk}'")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED triggernade re-record '{alt_trig_hk}': {e}")
+
+        # Mine: Alt+hotkey = re-record position
+        if mine_hk and mine_hk != "Press key...":
+            try:
+                alt_mine_hk = f"alt+{mine_hk}" if not mine_hk.startswith("alt+") else mine_hk
+                self.mine_rerecord_registered = keyboard.add_hotkey(alt_mine_hk, self.start_mine_drag_recording, suppress=False)
+                print(f"[HOTKEY] Mine re-record registered: '{alt_mine_hk}'")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED mine re-record '{alt_mine_hk}': {e}")
+
+        # Ammo: Alt+hotkey = re-record sequence
+        if untitled1_hk and untitled1_hk != "Press key...":
+            try:
+                alt_um1_hk = f"alt+{untitled1_hk}" if not untitled1_hk.startswith("alt+") else untitled1_hk
+                self.um1_rerecord_registered = keyboard.add_hotkey(alt_um1_hk, self._start_um1_sequence_recording, suppress=False)
+                print(f"[HOTKEY] Ammo re-record registered: '{alt_um1_hk}'")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED ammo re-record '{alt_um1_hk}': {e}")
+
+        # Ghost: Alt+hotkey = re-record sequence
+        if ghost_hk and ghost_hk != "Press key...":
+            try:
+                alt_ghost_hk = f"alt+{ghost_hk}" if not ghost_hk.startswith("alt+") else ghost_hk
+                self.ghost_rerecord_registered = keyboard.add_hotkey(alt_ghost_hk, self._start_ghost_sequence_recording, suppress=False)
+                print(f"[HOTKEY] Ghost re-record registered: '{alt_ghost_hk}'")
+            except Exception as e:
+                print(f"[HOTKEY] FAILED ghost re-record '{alt_ghost_hk}': {e}")
 
     def stop_all_macros(self):
-        """Universal stop - triggered by Escape"""
-        print("[HOTKEY] ESCAPE pressed - stopping all macros!")
+        """Universal stop - triggered by configurable hotkey"""
+        print("[HOTKEY] Stop All pressed - stopping all macros!")
         self.keydoor_stop = True
         self.throwable_stop = True
         self.triggernade_stop = True
@@ -2791,12 +3153,13 @@ class QuickDupeApp:
         is_disconnected = False
         cycle = 0
 
-        # Equip throwable first (not in original but needed for first cycle)
-        print("[PREP] Q to equip throwable")
-        pynput_keyboard.press('q')
-        self.vsleep(10)
-        pynput_keyboard.release('q')
-        self.vsleep(500)
+        # Equip throwable first (optional)
+        if self.throw_q_at_start_var.get():
+            print("[PREP] Q to equip throwable")
+            pynput_keyboard.press('q')
+            self.vsleep(10)
+            pynput_keyboard.release('q')
+            self.vsleep(500)
         print("[PREP] Done, starting loop")
 
         try:
@@ -2862,51 +3225,48 @@ class QuickDupeApp:
                     print(f"[{cycle}] STOPPED during M1 spam after reconnect")
                     break
 
-                # ===== Wait before E (configurable) =====
-                wait_before_e_ms = self.throw_wait_before_e_var.get()
-                wait_after_e_ms = self.throw_wait_after_e_var.get()
-                wait_after_q_ms = self.throw_wait_after_q_var.get()
+                # ===== E pickup (optional) =====
+                if self.throw_e_pickup_var.get():
+                    wait_before_e_ms = self.throw_wait_before_e_var.get()
+                    wait_after_e_ms = self.throw_wait_after_e_var.get()
 
-                print(f"[{cycle}] Waiting ~{wait_before_e_ms}ms before E...")
-                self.vsleep(wait_before_e_ms)
+                    print(f"[{cycle}] Waiting ~{wait_before_e_ms}ms before E...")
+                    self.vsleep(wait_before_e_ms)
 
-                if self.throwable_stop:
-                    print(f"[{cycle}] STOPPED before E")
-                    break
+                    if self.throwable_stop:
+                        print(f"[{cycle}] STOPPED before E")
+                        break
 
-                # ===== E (pickup / disarm) =====
-                e_hold_ms = self.throw_e_hold_var.get()
-                pynput_keyboard.press('e')
-                self.vsleep(e_hold_ms)
-                pynput_keyboard.release('e')
-                print(f"[{cycle}] E held {e_hold_ms}ms")
-
-                # Second E press if double E enabled (for fuel canisters: disarm then pickup)
-                if self.throw_double_e_var.get():
-                    e_gap_ms = self.throw_e_gap_var.get()
-                    self.vsleep(e_gap_ms)  # Configurable gap between presses
-                    e2_hold_ms = self.throw_e2_hold_var.get()
+                    # ===== E (pickup / disarm) =====
+                    e_hold_ms = self.throw_e_hold_var.get()
                     pynput_keyboard.press('e')
-                    self.vsleep(e2_hold_ms)
+                    self.vsleep(e_hold_ms)
                     pynput_keyboard.release('e')
-                    print(f"[{cycle}] 2nd E held {e2_hold_ms}ms")
+                    print(f"[{cycle}] E held {e_hold_ms}ms")
 
-                print(f"[{cycle}] Waiting ~{wait_after_e_ms}ms after E...")
-                self.vsleep(wait_after_e_ms)
+                    # Second E press if double E enabled (for fuel canisters: disarm then pickup)
+                    if self.throw_double_e_var.get():
+                        e_gap_ms = self.throw_e_gap_var.get()
+                        self.vsleep(e_gap_ms)  # Configurable gap between presses
+                        e2_hold_ms = self.throw_e2_hold_var.get()
+                        pynput_keyboard.press('e')
+                        self.vsleep(e2_hold_ms)
+                        pynput_keyboard.release('e')
+                        print(f"[{cycle}] 2nd E held {e2_hold_ms}ms")
+
+                    print(f"[{cycle}] Waiting ~{wait_after_e_ms}ms after E...")
+                    self.vsleep(wait_after_e_ms)
 
                 if self.throwable_stop:
-                    print(f"[{cycle}] STOPPED before Q")
+                    print(f"[{cycle}] STOPPED at end of cycle")
                     break
 
-                # ===== Q (re-equip) =====
-                pynput_keyboard.press('q')
-                self.vsleep(50)
-                pynput_keyboard.release('q')
-                # Add extra loop variance (scales with variance slider - more extreme)
+                # Wait before next cycle
+                wait_after_q_ms = self.throw_wait_after_q_var.get()
                 variance_pct = self.timing_variance_var.get()
                 extra_loop_var = random.uniform(0, variance_pct * 10) if variance_pct > 0 else 0
                 loop_wait = wait_after_q_ms + extra_loop_var
-                print(f"[{cycle}] Q pressed, waiting {loop_wait:.0f}ms before next cycle...")
+                print(f"[{cycle}] Waiting {loop_wait:.0f}ms before next cycle...")
                 self.vsleep(loop_wait)
 
                 cycle_time = (time.perf_counter() - cycle_start) * 1000
@@ -3514,6 +3874,111 @@ class QuickDupeApp:
             self.root.after(0, lambda: self.untitled1_status_label.config(foreground="orange"))
             self.root.after(0, lambda: self.show_overlay("Ammo started"))
             threading.Thread(target=self.run_untitled1_macro, daemon=True).start()
+
+    def on_ghost_hotkey(self):
+        """Run Ghost Attachment macro (single run, no toggle)"""
+        if self.ghost_running:
+            return  # Already running
+        print("[HOTKEY] Starting Ghost Attachment")
+        self.ghost_running = True
+        self.root.after(0, lambda: self.ghost_status_var.set("RUNNING"))
+        self.root.after(0, lambda: self.ghost_status_label.config(foreground="orange"))
+        threading.Thread(target=self.run_ghost_macro, daemon=True).start()
+
+    def run_ghost_macro(self):
+        """
+        Ghost Attachment macro:
+        1. Right click on item
+        2. DC outbound
+        3. Click detach mods
+        4. Drag item to empty slot
+        5. Reconnect
+        6. Double click slot
+        7. Show complete message (stay in inventory)
+        """
+        is_disconnected = False
+
+        # Release all keys/buttons before starting
+        pynput_mouse.release(MouseButton.left)
+        pynput_mouse.release(MouseButton.right)
+
+        try:
+            self.root.after(0, lambda: self.show_overlay("Detaching mods..."))
+
+            # ===== 1. Move to item and right click =====
+            self._smooth_move(self.ghost_item_pos)
+            pynput_mouse.press(MouseButton.right)
+            self.vsleep(30)
+            pynput_mouse.release(MouseButton.right)
+            self.vsleep(50)
+            print(f"[GHOST] Right clicked item at {self.ghost_item_pos}")
+
+            # ===== 2. Disconnect outbound =====
+            start_packet_drop(inbound=False)
+            is_disconnected = True
+            self.vsleep(20)
+            print("[GHOST] Disconnected outbound")
+
+            # ===== 3. Click detach mods =====
+            self._smooth_move(self.ghost_context_pos)
+            pynput_mouse.press(MouseButton.left)
+            self.vsleep(30)
+            pynput_mouse.release(MouseButton.left)
+            self.vsleep(50)
+            print(f"[GHOST] Clicked detach mods at {self.ghost_context_pos}")
+
+            # ===== 4. Drag item to empty slot =====
+            self._smooth_move(self.ghost_drag_start)
+            pynput_mouse.press(MouseButton.left)
+            self.vsleep(80)
+            # Smooth drag with variance
+            start_x, start_y = self.ghost_drag_start
+            end_x, end_y = self.ghost_drag_end
+            dx = end_x - start_x
+            dy = end_y - start_y
+            steps = 15
+            for i in range(1, steps + 1):
+                t = i / steps
+                x = int(start_x + dx * t)
+                y = int(start_y + dy * t)
+                pynput_mouse.position = (x, y)
+                self.vsleep(5)
+            pynput_mouse.release(MouseButton.left)
+            print(f"[GHOST] Dragged item {self.ghost_drag_start} → {self.ghost_drag_end}")
+
+            # ===== 5. Wait then reconnect =====
+            self.vsleep(300)
+            stop_packet_drop()
+            is_disconnected = False
+            self.vsleep(50)
+            print("[GHOST] Reconnected")
+
+            # ===== 6. Double click at drag_end =====
+            self._smooth_move(self.ghost_drag_end)
+            # First click
+            pynput_mouse.press(MouseButton.left)
+            self.vsleep(20)
+            pynput_mouse.release(MouseButton.left)
+            time.sleep((15 + random.uniform(-3, 3)) / 1000.0)
+            # Second click
+            pynput_mouse.press(MouseButton.left)
+            self.vsleep(20)
+            pynput_mouse.release(MouseButton.left)
+            self.vsleep(59)
+            print(f"[GHOST] Double clicked at {self.ghost_drag_end}")
+
+            # ===== 7. Done - stay in inventory =====
+            self.root.after(0, lambda: self.show_overlay("Ghost attachment complete!"))
+            print("[GHOST] Complete")
+
+        finally:
+            pynput_mouse.release(MouseButton.left)
+            pynput_mouse.release(MouseButton.right)
+            if is_disconnected:
+                stop_packet_drop()
+            self.ghost_running = False
+            self.root.after(0, lambda: self.ghost_status_var.set("Ready"))
+            self.root.after(0, lambda: self.ghost_status_label.config(foreground="gray"))
 
     def _smooth_move(self, target_pos, steps=8):
         """Smooth mouse movement to target position with variance"""

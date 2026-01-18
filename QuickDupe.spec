@@ -1,28 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
-import importlib.util
+import vgamepad
+import pydivert
 
-# Find packages dynamically by locating the actual module files
-def find_package_path(package_name):
-    spec = importlib.util.find_spec(package_name)
-    if spec and spec.submodule_search_locations:
-        return spec.submodule_search_locations[0]
-    return None
-
-vgamepad_path = find_package_path('vgamepad')
-pydivert_path = find_package_path('pydivert')
+vgamepad_path = os.path.dirname(vgamepad.__file__)
+pydivert_path = os.path.dirname(pydivert.__file__)
 
 a = Analysis(
     ['quickdupe.py'],
     pathex=[],
     binaries=[('WinDivert.dll', '.'), ('WinDivert64.sys', '.')],
-    datas=[
-        ('icon.ico', '.'),
-        ('icon.png', '.'),
-        ('ViGEmBus_1.22.0_x64_x86_arm64.exe', '.'),
-        (vgamepad_path, 'vgamepad'),
-        (pydivert_path, 'pydivert'),
-    ],
+    datas=[('icon.ico', '.'), ('icon.png', '.'), ('ViGEmBus_1.22.0_x64_x86_arm64.exe', '.'), (vgamepad_path, 'vgamepad'), (pydivert_path, 'pydivert')],
     hiddenimports=['pynput', 'pynput.keyboard', 'pynput.mouse', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'pynput._util', 'pynput._util.win32', 'vgamepad', 'pydivert'],
     hookspath=[],
     hooksconfig={},
