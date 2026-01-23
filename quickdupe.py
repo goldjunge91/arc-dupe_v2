@@ -1352,62 +1352,160 @@ class QuickDupeApp:
         self.root.focus_force()
 
     def _show_direction_picker(self):
-        """Show compass popup for direction selection"""
+        """Show radial compass popup with hover detection using images"""
+        import math
+        from PIL import Image, ImageTk
+
+        # Create dark overlay over app
+        overlay = tk.Toplevel(self.root)
+        overlay.overrideredirect(True)
+        overlay.configure(bg='black')
+        overlay.attributes('-alpha', 0.7)  # Semi-transparent
+        overlay.geometry(f"{self.root.winfo_width()}x{self.root.winfo_height()}+{self.root.winfo_x()}+{self.root.winfo_y()}")
+
+        # Create popup for direction picker
         popup = tk.Toplevel(self.root)
         popup.title("Select Direction")
         popup.overrideredirect(True)
-        popup.configure(bg='#1e1e1e')
+        popup.configure(bg='black')
+        popup.attributes('-transparentcolor', 'black')  # Make black corners transparent
+        popup.attributes('-topmost', True)
 
-        # Center on screen
-        popup.update_idletasks()
-        x = self.root.winfo_x() + 50
-        y = self.root.winfo_y() + 200
-        popup.geometry(f"+{x}+{y}")
+        # Load direction images (handle PyInstaller bundle)
+        if getattr(sys, 'frozen', False):
+            script_dir = sys._MEIPASS
+        else:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Arrow symbols for each direction (W and NW not available in game)
-        arrows = {
-            "N": "\u2191", "NE": "\u2197",
-            "":  "\u25CF", "E":  "\u2192",
-            "SW": "\u2199", "S": "\u2193", "SE": "\u2198"
+        img_files = {
+            "NONE": "NONE.png", "N": "N.png", "NE": "NE.png",
+            "E": "E.png", "SE": "SE.png", "S": "S.png", "SW": "SW.png"
         }
+        images = {}
+        scale = 1.1  # Scale up 10%
+        for name, filename in img_files.items():
+            path = os.path.join(script_dir, filename)
+            if os.path.exists(path):
+                img = Image.open(path)
+                # Scale up by 10%
+                new_size = (int(img.width * scale), int(img.height * scale))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+                images[name] = ImageTk.PhotoImage(img)
 
-        # Grid layout: 3x3 (W and NW disabled)
-        grid = [
-            [None, "N", "NE"],
-            [None,  "",  "E"],
-            ["SW", "S", "SE"]
-        ]
+        if not images or "NONE" not in images:
+            popup.destroy()
+            return
 
-        def select_dir(d):
-            if d:  # Not center or disabled
-                self.mine_q_direction_var.set(d)
-                self.mine_q_dir_btn.config(text=d)
-                self.save_settings()
+        # Get image size
+        img_width = images["NONE"].width()
+        img_height = images["NONE"].height()
+        center_x = img_width // 2
+        center_y = img_height // 2
+
+        # Title label above canvas
+        title_label = tk.Label(popup, text="Select Slot", bg='white', fg='black', font=('Arial', 12, 'bold'), padx=10, pady=5)
+        title_label.pack(pady=(5, 10))
+
+        # Create canvas
+        canvas = tk.Canvas(popup, width=img_width, height=img_height, bg='black', highlightthickness=0)
+        canvas.pack()
+        canvas.create_image(0, 0, anchor='nw', image=images["NONE"], tags="radial")
+        # White circle border (3px)
+        canvas.create_oval(1, 1, img_width - 1, img_height - 1, outline='white', width=3, tags="border")
+        # Show current selection in center (3px up from center)
+        selected = self.mine_q_direction_var.get()
+        canvas.create_text(center_x - 3, center_y - 3, text=selected, fill='black', font=('Arial', 10, 'bold'), tags="dirtext")
+
+        # Store reference to prevent garbage collection
+        popup.images = images
+        current_dir = [None]
+
+        def angle_to_direction(angle):
+            """Convert angle (degrees, 0=right, counter-clockwise) to direction"""
+            # Calibrated: N=67-113, NE=22-70, E=wraps 0, SE=290-338, S=247-295, SW=206-253
+            # Ring: inner=92, outer=151
+            angle = angle % 360
+            if 68 <= angle < 113:       # N
+                return "N"
+            elif 22 <= angle < 68:      # NE
+                return "NE"
+            elif angle < 22 or angle >= 338:  # E (wraps around 0)
+                return "E"
+            elif 292 <= angle < 338:    # SE
+                return "SE"
+            elif 250 <= angle < 292:    # S
+                return "S"
+            elif 206 <= angle < 250:    # SW
+                return "SW"
+            # 113-206 is NW/W territory - not selectable
+            return None
+
+        def on_mouse_move(event):
+            dx = event.x - center_x
+            dy = center_y - event.y  # Flip Y for standard math coords
+            dist = math.sqrt(dx*dx + dy*dy)
+
+            # Only detect in the ring area (not too close to center, not outside)
+            if dist < 101 or dist > 166:  # Scaled 10% (92*1.1, 151*1.1)
+                new_dir = None
+            else:
+                angle = math.degrees(math.atan2(dy, dx))
+                if angle < 0:
+                    angle += 360
+                new_dir = angle_to_direction(angle)
+
+            if new_dir != current_dir[0]:
+                current_dir[0] = new_dir
+                img_key = new_dir if new_dir and new_dir in images else "NONE"
+                canvas.delete("radial")
+                canvas.create_image(0, 0, anchor='nw', image=images[img_key], tags="radial")
+                # Redraw border on top
+                canvas.delete("border")
+                canvas.create_oval(1, 1, img_width - 1, img_height - 1, outline='white', width=3, tags="border")
+                # Update center text
+                canvas.delete("dirtext")
+                display_text = new_dir if new_dir else self.mine_q_direction_var.get()
+                canvas.create_text(center_x - 3, center_y - 3, text=display_text, fill='black', font=('Arial', 10, 'bold'), tags="dirtext")
+
+        def close_picker():
+            overlay.destroy()
             popup.destroy()
 
-        for row_idx, row in enumerate(grid):
-            for col_idx, d in enumerate(row):
-                if d is None:
-                    # Disabled slot
-                    lbl = tk.Label(popup, text="X", font=("Arial", 16), bg='#1e1e1e', fg='#333333', width=3, height=1)
-                    lbl.grid(row=row_idx, column=col_idx, padx=2, pady=2)
-                elif d == "":
-                    # Center - just a marker
-                    lbl = tk.Label(popup, text=arrows.get(d, ""), font=("Arial", 16), bg='#1e1e1e', fg='#666666', width=3, height=1)
-                    lbl.grid(row=row_idx, column=col_idx, padx=2, pady=2)
-                else:
-                    # Highlight current selection
-                    is_selected = (d == self.mine_q_direction_var.get())
-                    bg_color = '#3c5c3c' if is_selected else '#2d2d2d'
-                    btn = tk.Button(popup, text=arrows.get(d, d), font=("Arial", 16), bg=bg_color, fg='white',
-                                   width=3, height=1, bd=0, activebackground='#4a4a4a',
-                                   command=lambda d=d: select_dir(d))
-                    btn.grid(row=row_idx, column=col_idx, padx=2, pady=2)
+        def on_click(event):
+            if current_dir[0]:
+                self.mine_q_direction_var.set(current_dir[0])
+                self.mine_q_dir_btn.config(text=current_dir[0])
+                self.save_settings()
+            close_picker()
 
-        # Close on click outside
-        popup.bind('<FocusOut>', lambda e: popup.destroy())
+        def on_leave(event):
+            # Reset to NONE when mouse leaves canvas
+            if current_dir[0] is not None:
+                current_dir[0] = None
+                canvas.delete("radial")
+                canvas.create_image(0, 0, anchor='nw', image=images["NONE"], tags="radial")
+                canvas.delete("border")
+                canvas.create_oval(1, 1, img_width - 1, img_height - 1, outline='white', width=3, tags="border")
+                canvas.delete("dirtext")
+                canvas.create_text(center_x - 3, center_y - 3, text=self.mine_q_direction_var.get(), fill='black', font=('Arial', 10, 'bold'), tags="dirtext")
+
+        canvas.bind('<Motion>', on_mouse_move)
+        canvas.bind('<Leave>', on_leave)
+        canvas.bind('<Button-1>', on_click)
+        popup.bind('<Button-1>', on_click)  # Click anywhere on popup closes
+        overlay.bind('<Button-1>', lambda e: close_picker())  # Click overlay closes
+        popup.bind('<Escape>', lambda e: close_picker())
+
+        # Position centered over app window
+        popup.update_idletasks()
+        app_x = self.root.winfo_x()
+        app_y = self.root.winfo_y()
+        app_w = self.root.winfo_width()
+        app_h = self.root.winfo_height()
+        x = app_x + (app_w - img_width) // 2
+        y = app_y + (app_h - img_height) // 2 - 60  # Move up 60px
+        popup.geometry(f"+{x}+{y}")
         popup.focus_set()
-        popup.grab_set()
 
     def _play_mine_q_radial(self):
         """Play Q radial selection using compass direction"""
