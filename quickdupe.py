@@ -38,7 +38,7 @@ def _check_obfuscation_enabled():
 
 OBFUSCATION_ENABLED = _check_obfuscation_enabled()
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 
 # Generate random app name (8-18 chars) if obfuscation enabled, otherwise use default
 if OBFUSCATION_ENABLED:
@@ -264,6 +264,7 @@ class QuickDupeApp:
 
         # Disable tkinter bell sound (prevents beeps during macros)
         self.root.bell = lambda: None
+        self.root.bind('<Key>', lambda e: None)  # Suppress key event beeps
 
         # Force show in taskbar despite overrideredirect
         self.root.after(10, self._fix_taskbar)
@@ -1016,7 +1017,7 @@ class QuickDupeApp:
         self.create_slider(frame, "Reconnect after M1 #:", "trig_reconnect_after", 1, 1, 20, "")
         self.create_slider(frame, "Wait before E spam:", "wait_before_espam", 0, 0, 2000, "ms")
         self.create_slider(frame, "E spam duration:", "espam_duration", 1000, 0, 5000, "ms")
-        self.create_slider(frame, "M1s before E interweave:", "trig_m1_before_interweave", 5, 0, 20, "")
+        self.create_slider(frame, "M1s before E interweave:", "trig_m1_before_interweave", 1, 0, 20, "")
         self.create_slider(frame, "Wait before next cycle:", "wait_before_cycle", 100, 0, 2000, "ms")
 
         trig_btn_frame = ttk.Frame(frame)
@@ -1076,7 +1077,7 @@ class QuickDupeApp:
         mine_cook_frame = ttk.Frame(frame)
         mine_cook_frame.pack(fill='x', padx=10, pady=2)
         ttk.Label(mine_cook_frame, text="Cook time:", width=20, anchor='w', font=("Arial", 9, "bold")).pack(side='left')
-        self.mine_cook_var = tk.IntVar(value=int(self.config.get("mine_cook", 1132)))
+        self.mine_cook_var = tk.IntVar(value=int(self.config.get("mine_cook", 236)))
 
         def on_mine_cook_slide(val):
             self.mine_cook_var.set(int(float(val)))
@@ -1115,7 +1116,7 @@ class QuickDupeApp:
         # Defaults based on YOUR successful recordings
         self.create_slider(frame, "Delay before DC:", "mine_dc_delay", 99, 0, 500, "ms", bold=True)
         self.create_slider(frame, "Drag speed:", "mine_drag_speed", 8, 3, 20, "ms/step")
-        self.create_slider(frame, "Pre-close delay:", "mine_pre_close", 1200, 0, 2000, "ms")
+        self.create_slider(frame, "Pre-close delay:", "mine_pre_close", 100, 0, 2000, "ms")
         self.create_slider(frame, "TAB hold (close):", "mine_tab_hold", 80, 20, 300, "ms")
         self.create_slider(frame, "Close to reconnect:", "mine_close_reconnect", 409, 100, 2000, "ms", bold=True)
         self.create_slider(frame, "Reconnect to click:", "mine_click_delay", 7, 0, 500, "ms", bold=True)
@@ -1136,13 +1137,14 @@ class QuickDupeApp:
             [1926, 1035], [1927, 1012], [1930, 993], [1922, 1065], [1924, 1049]
         ]
         self.mine_q_mode_var = tk.StringVar(value=self.config.get("mine_q_mode", "radial"))
-        self.mine_q_recording = self.config.get("mine_q_recording", default_q_recording)
         ttk.Radiobutton(reselect_frame, text="Simple tap", variable=self.mine_q_mode_var, value="simple", command=self.save_settings).pack(side='left', padx=(10, 5))
         ttk.Radiobutton(reselect_frame, text="Radial:", variable=self.mine_q_mode_var, value="radial", command=self.save_settings).pack(side='left')
-        self.mine_q_record_btn = ttk.Button(reselect_frame, text="Record", width=7, command=self._start_mine_q_recording)
-        self.mine_q_record_btn.pack(side='left', padx=2)
-        self.mine_q_status = tk.StringVar(value=f"({len(self.mine_q_recording)} moves)" if self.mine_q_recording else "(none)")
-        ttk.Label(reselect_frame, textvariable=self.mine_q_status, font=("Consolas", 8), foreground='#888888').pack(side='left', padx=2)
+
+        # Direction picker button - opens compass popup
+        self.mine_q_direction_var = tk.StringVar(value=self.config.get("mine_q_direction", "S"))
+        self.mine_q_dir_btn = ttk.Button(reselect_frame, text=self.mine_q_direction_var.get(), width=3,
+                                         command=self._show_direction_picker)
+        self.mine_q_dir_btn.pack(side='left', padx=2)
 
         # Mouse nudge option (move mouse between loops)
         nudge_frame = ttk.Frame(frame)
@@ -1191,8 +1193,8 @@ class QuickDupeApp:
         ttk.Checkbutton(frame, text="Hold to activate (vs toggle)", variable=self.espam_hold_mode_var,
                         command=self.save_settings).pack(anchor='w', padx=10, pady=2)
 
-        # Seconds before repeat slider (0-10, default 0)
-        self.create_slider(frame, "Seconds before repeat:", "espam_repeat_delay", 0, 0, 10, "s")
+        # Time between E spam bursts (in ms)
+        self.create_slider(frame, "Time before repeat:", "espam_repeat_delay", 0, 0, 5000, "ms")
 
         self.espam_status_var = tk.StringVar(value="Ready")
         self.espam_status_label = ttk.Label(frame, textvariable=self.espam_status_var, style='Dim.TLabel')
@@ -1349,77 +1351,96 @@ class QuickDupeApp:
         self.root.bind("<KeyPress>", self.on_key_press)
         self.root.focus_force()
 
-    def _start_mine_q_recording(self):
-        """Record mouse motion during Q radial menu selection"""
-        from pynput import mouse
-        import threading
+    def _show_direction_picker(self):
+        """Show compass popup for direction selection"""
+        popup = tk.Toplevel(self.root)
+        popup.title("Select Direction")
+        popup.overrideredirect(True)
+        popup.configure(bg='#1e1e1e')
 
-        self.mine_q_record_btn.config(text="...")
-        self.show_overlay("Hold Q, move to mine, release Q", force=True)
+        # Center on screen
+        popup.update_idletasks()
+        x = self.root.winfo_x() + 50
+        y = self.root.winfo_y() + 200
+        popup.geometry(f"+{x}+{y}")
 
-        def do_recording():
-            recording = []
-            active = False
-            done = False
+        # Arrow symbols for each direction (W and NW not available in game)
+        arrows = {
+            "N": "\u2191", "NE": "\u2197",
+            "":  "\u25CF", "E":  "\u2192",
+            "SW": "\u2199", "S": "\u2193", "SE": "\u2198"
+        }
 
-            def on_mouse_move(x, y):
-                nonlocal active
-                if active:
-                    recording.append((x, y))
+        # Grid layout: 3x3 (W and NW disabled)
+        grid = [
+            [None, "N", "NE"],
+            [None,  "",  "E"],
+            ["SW", "S", "SE"]
+        ]
 
-            mouse_listener = mouse.Listener(on_move=on_mouse_move)
-            mouse_listener.start()
+        def select_dir(d):
+            if d:  # Not center or disabled
+                self.mine_q_direction_var.set(d)
+                self.mine_q_dir_btn.config(text=d)
+                self.save_settings()
+            popup.destroy()
 
-            # Wait for Q press
-            keyboard.wait('q', suppress=False)
-            active = True
-            self.root.after(0, lambda: self.show_overlay("Recording... release Q when done", force=True))
+        for row_idx, row in enumerate(grid):
+            for col_idx, d in enumerate(row):
+                if d is None:
+                    # Disabled slot
+                    lbl = tk.Label(popup, text="X", font=("Arial", 16), bg='#1e1e1e', fg='#333333', width=3, height=1)
+                    lbl.grid(row=row_idx, column=col_idx, padx=2, pady=2)
+                elif d == "":
+                    # Center - just a marker
+                    lbl = tk.Label(popup, text=arrows.get(d, ""), font=("Arial", 16), bg='#1e1e1e', fg='#666666', width=3, height=1)
+                    lbl.grid(row=row_idx, column=col_idx, padx=2, pady=2)
+                else:
+                    # Highlight current selection
+                    is_selected = (d == self.mine_q_direction_var.get())
+                    bg_color = '#3c5c3c' if is_selected else '#2d2d2d'
+                    btn = tk.Button(popup, text=arrows.get(d, d), font=("Arial", 16), bg=bg_color, fg='white',
+                                   width=3, height=1, bd=0, activebackground='#4a4a4a',
+                                   command=lambda d=d: select_dir(d))
+                    btn.grid(row=row_idx, column=col_idx, padx=2, pady=2)
 
-            # Wait for Q release
-            while keyboard.is_pressed('q'):
-                time.sleep(0.01)
-
-            active = False
-            mouse_listener.stop()
-
-            # Simplify recording - keep ~15 points
-            if len(recording) > 15:
-                step = len(recording) // 15
-                simplified = [recording[i] for i in range(0, len(recording), step)][:15]
-            else:
-                simplified = list(recording)
-
-            self.mine_q_recording = simplified
-            self.config["mine_q_recording"] = simplified
-            save_config(self.config)
-            self.root.after(0, lambda: self.mine_q_record_btn.config(text="Record"))
-            self.root.after(0, lambda: self.mine_q_status.set(f"({len(simplified)} moves)"))
-            self.root.after(0, lambda: self.show_overlay(f"Recorded {len(simplified)} moves!", force=True))
-            print(f"[Q RADIAL] Recorded {len(simplified)} positions")
-
-        threading.Thread(target=do_recording, daemon=True).start()
+        # Close on click outside
+        popup.bind('<FocusOut>', lambda e: popup.destroy())
+        popup.focus_set()
+        popup.grab_set()
 
     def _play_mine_q_radial(self):
-        """Play back recorded Q radial selection"""
-        if not self.mine_q_recording:
-            # Fallback to simple Q tap
-            pynput_keyboard.press('q')
-            time.sleep(0.05)
-            pynput_keyboard.release('q')
-            return
+        """Play Q radial selection using compass direction"""
+        # Direction to delta mapping (distance of 300 pixels)
+        # W and NW not available in game
+        dist = 300
+        direction_deltas = {
+            "N":  (0, -dist),
+            "NE": (dist, -dist),
+            "E":  (dist, 0),
+            "SE": (dist, dist),
+            "S":  (0, dist),
+            "SW": (-dist, dist),
+        }
 
-        # Press Q, replay mouse motion, release Q
+        direction = self.mine_q_direction_var.get()
+        dx, dy = direction_deltas.get(direction, (0, dist))  # Default to South
+
+        print(f"[Q RADIAL] Direction: {direction}, delta: ({dx}, {dy})")
+
+        # Press Q and wait for radial to open
         pynput_keyboard.press('q')
-        time.sleep(0.4)  # Wait for radial to fully open
+        time.sleep(0.3)
 
-        # Replay the recorded positions
-        for x, y in self.mine_q_recording:
-            pynput_mouse.position = (x, y)
-            time.sleep(0.02 + random.uniform(0, 0.01))  # 20-30ms per step
+        # Move in steps for natural feel
+        steps = 10
+        for i in range(steps):
+            pynput_mouse.move(dx // steps, dy // steps)
+            time.sleep(0.015)
 
-        time.sleep(0.2)  # Let selection register
+        time.sleep(0.1)
         pynput_keyboard.release('q')
-        print(f"[Q RADIAL] Played {len(self.mine_q_recording)} moves")
+        print(f"[Q RADIAL] Done - selected {direction}")
 
     def start_mine_drag_recording(self):
         """Record mine drag path - drag item to ground"""
@@ -2229,6 +2250,7 @@ class QuickDupeApp:
         self.config["mine_loop_delay"] = self.mine_loop_delay_var.get()
         self.config["mine_reselect"] = self.mine_reselect_var.get()
         self.config["mine_q_mode"] = self.mine_q_mode_var.get()
+        self.config["mine_q_direction"] = self.mine_q_direction_var.get()
         self.config["mine_nudge"] = self.mine_nudge_var.get()
         self.config["mine_nudge_px"] = self.mine_nudge_px_var.get()
         # E-spam settings
@@ -2262,7 +2284,7 @@ class QuickDupeApp:
         self.trig_m2_hold_var.set(51)  # Hold M2 for 51ms
         self.trig_drag_speed_var.set(8)  # Drag speed
         self.trig_dc_delay_var.set(10)  # Delay before DC
-        self.trig_m1_before_interweave_var.set(5)  # 5 M1s before E interweave
+        self.trig_m1_before_interweave_var.set(1)  # 1 M1 before E interweave
         self.triggernade_q_spam_var.set(False)  # Q spam disabled by default (not needed with interleaved E)
         # Note: Positions are NOT reset - only timing parameters
         self.save_settings()
@@ -2271,10 +2293,10 @@ class QuickDupeApp:
     def reset_mine_defaults(self):
         """Reset all mine dupe timing parameters to defaults (based on your successful recordings)"""
         # These are from your exact timings that worked 100%
-        self.mine_cook_var.set(1132)  # Total cook time (M1 hold)
+        self.mine_cook_var.set(236)  # Cook time (M1 to TAB)
         self.mine_dc_delay_var.set(99)  # TAB to DC delay
         self.mine_drag_speed_var.set(8)  # Drag speed
-        self.mine_pre_close_var.set(1200)  # After drag to TAB close
+        self.mine_pre_close_var.set(100)  # After drag to TAB close
         self.mine_tab_hold_var.set(80)  # TAB hold duration
         self.mine_close_reconnect_var.set(409)  # TAB close to reconnect
         self.mine_click_delay_var.set(7)  # Reconnect to pickup click (INSTANT!)
@@ -2284,14 +2306,10 @@ class QuickDupeApp:
         self.mine_reselect_var.set(True)
         self.mine_nudge_var.set(True)
         self.mine_nudge_px_var.set(50)
-        # Q radial mode with default recording
+        # Q radial mode with default direction
         self.mine_q_mode_var.set("radial")
-        self.mine_q_recording = [
-            [1920, 1080], [1920, 1064], [1920, 1046], [1920, 1020], [1920, 982],
-            [1920, 949], [1922, 914], [1925, 884], [1928, 852], [1922, 1058],
-            [1926, 1035], [1927, 1012], [1930, 993], [1922, 1065], [1924, 1049]
-        ]
-        self.mine_q_status.set(f"({len(self.mine_q_recording)} moves)")
+        self.mine_q_direction_var.set("S")
+        self.mine_q_dir_btn.config(text="S")
         # Default positions (for 4K resolution)
         self.mine_drag_start = (3032, 1236)
         self.mine_drag_end = (3171, 1593)
@@ -2404,7 +2422,7 @@ class QuickDupeApp:
             "mine_loop_delay": self.mine_loop_delay_var.get(),
             "mine_reselect": self.mine_reselect_var.get(),
             "mine_q_mode": self.mine_q_mode_var.get(),
-            "mine_q_recording": self.mine_q_recording,
+            "mine_q_direction": self.mine_q_direction_var.get(),
             "mine_nudge": self.mine_nudge_var.get(),
             "mine_nudge_px": self.mine_nudge_px_var.get(),
             "mine_slot_pos": list(self.mine_slot_pos),
@@ -2427,7 +2445,9 @@ class QuickDupeApp:
         if "mine_loop_delay" in data: self.mine_loop_delay_var.set(data["mine_loop_delay"])
         if "mine_reselect" in data: self.mine_reselect_var.set(data["mine_reselect"])
         if "mine_q_mode" in data: self.mine_q_mode_var.set(data["mine_q_mode"])
-        if "mine_q_recording" in data: self.mine_q_recording = data["mine_q_recording"]
+        if "mine_q_direction" in data:
+            self.mine_q_direction_var.set(data["mine_q_direction"])
+            self.mine_q_dir_btn.config(text=data["mine_q_direction"])
         if "mine_nudge" in data: self.mine_nudge_var.set(data["mine_nudge"])
         if "mine_nudge_px" in data: self.mine_nudge_px_var.set(data["mine_nudge_px"])
         if "mine_slot_pos" in data:
@@ -3004,9 +3024,13 @@ class QuickDupeApp:
                 dupe_click_hold = self.mine_pickup_hold_var.get()
                 e_delay = self.mine_e_delay_var.get()
                 loop_delay = self.mine_loop_delay_var.get()
+                tab_hold = self.mine_tab_hold_var.get()
+                close_reconnect = self.mine_close_reconnect_var.get()
+                pre_close = self.mine_pre_close_var.get()
                 print(f"[{cycle}] Timings: cook={cook_time}, dc_delay={dc_delay}, click_delay={click_delay}, dupe_hold={dupe_click_hold}")
 
-                self.root.after(0, lambda c=cycle: self.show_overlay(f"Mine {c}"))
+                # Removed cycle overlay - was causing Windows beep
+                # self.root.after(0, lambda c=cycle: self.show_overlay(f"Mine {c}"))
 
                 # ===== YOUR EXACT SEQUENCE (from your successful recordings) =====
                 # Key insight: TAB and DC happen WHILE still holding M1 (cooking)
@@ -3016,28 +3040,29 @@ class QuickDupeApp:
                 self.vsleep(50)
 
                 # 1. M1 PRESS (start cooking mine)
-                print(f"[{cycle}] M1 press - cooking...")
+                print(f"[{cycle}] M1 press - cooking for {cook_time}ms...")
                 pynput_mouse.press(MouseButton.left)
 
-                # 2. ~236ms into cook: TAB press (open inventory while still holding M1!)
-                self.vsleep(236)
+                # 2. Cook time: wait before TAB press (open inventory while still holding M1!)
+                self.vsleep(cook_time)
                 pynput_keyboard.press(Key.tab)
-                print(f"[{cycle}] TAB press (inventory opening, M1 still held)")
+                print(f"[{cycle}] TAB press after {cook_time}ms cook (inventory opening, M1 still held)")
 
-                # 3. ~99ms later: DC (while still holding M1!)
-                self.vsleep(99)
+                # 3. DC delay: wait before DC (while still holding M1!)
+                self.vsleep(dc_delay)
                 start_packet_drop(inbound=False)
                 is_disconnected = True
-                print(f"[{cycle}] DC started (M1 still held)")
+                print(f"[{cycle}] DC started after {dc_delay}ms (M1 still held)")
 
                 # 4. ~24ms later: TAB release
                 self.vsleep(24)
                 pynput_keyboard.release(Key.tab)
+                print(f"[{cycle}] TAB release")
 
-                # 5. ~326ms later: M1 release (total cook ~685ms)
+                # 5. ~326ms later: M1 release
                 self.vsleep(326)
                 pynput_mouse.release(MouseButton.left)
-                print(f"[{cycle}] M1 release - cook done (~685ms total)")
+                print(f"[{cycle}] M1 release - cook done")
 
                 if self.mine_stop:
                     break
@@ -3058,30 +3083,30 @@ class QuickDupeApp:
                 if self.mine_stop:
                     break
 
-                # 8. Quick TAB close after drag (1200ms was too slow!)
-                self.vsleep(100 + random.randint(0, 50))  # 100-150ms
+                # 8. TAB close after drag
+                self.vsleep(pre_close)
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(80)
+                self.vsleep(tab_hold)
                 pynput_keyboard.release(Key.tab)
-                print(f"[{cycle}] Inventory closed")
+                print(f"[{cycle}] Inventory closed (pre_close={pre_close}, tab_hold={tab_hold})")
 
                 if self.mine_stop:
                     break
 
-                # 9. ~409ms later: RECONNECT
-                self.vsleep(409)
+                # 9. Wait then RECONNECT
+                self.vsleep(close_reconnect)
                 stop_packet_drop()
                 is_disconnected = False
                 print(f"[{cycle}] Reconnected")
 
-                # 10. ~7ms later: M1 IMMEDIATELY (this is critical!)
-                self.vsleep(7)
+                # 10. Wait then M1 click (uses click_delay slider)
+                time.sleep(click_delay / 1000.0)
                 dupe_click_hold = self.mine_pickup_hold_var.get()
                 pynput_mouse.press(MouseButton.left)
-                print(f"[{cycle}] M1 press IMMEDIATELY after reconnect")
+                print(f"[{cycle}] M1 press after {click_delay}ms (holding {dupe_click_hold}ms)")
 
-                # 11. Hold ~1336ms
-                self.vsleep(dupe_click_hold)
+                # 11. Hold for dupe - use direct sleep, no variance/interruption
+                time.sleep(dupe_click_hold / 1000.0)
                 pynput_mouse.release(MouseButton.left)
                 print(f"[{cycle}] M1 release after {dupe_click_hold}ms hold")
                 print(f"[{cycle}] CYCLE DONE")
@@ -3122,10 +3147,10 @@ class QuickDupeApp:
                 self.vsleep(100)
                 if self.mine_reselect_var.get():
                     q_mode = self.mine_q_mode_var.get()
-                    if q_mode == "radial" and self.mine_q_recording:
-                        # Use recorded radial motion
+                    if q_mode == "radial":
+                        # Use direction-based radial selection
                         self._play_mine_q_radial()
-                        print(f"[{cycle}] Q radial reselect (recorded)")
+                        print(f"[{cycle}] Q radial reselect ({self.mine_q_direction_var.get()})")
                     else:
                         # Simple Q tap
                         pynput_keyboard.press('q')
@@ -3182,23 +3207,19 @@ class QuickDupeApp:
         # Brief delay so starting hotkey doesn't trigger stop
         time.sleep(0.2)
 
-        repeat_delay = self.espam_repeat_delay_var.get()  # seconds
+        repeat_delay_ms = self.espam_repeat_delay_var.get()  # now in ms
 
         try:
             while not self.espam_stop:
-                # Spam E rapidly
+                # Spam E
                 kb.press('e')
                 self.vsleep(11)
                 kb.release('e')
                 self.vsleep(50)
 
                 # If repeat delay > 0, pause between spam bursts
-                if repeat_delay > 0 and not self.espam_stop:
-                    # Wait for repeat delay (check stop flag periodically)
-                    waited = 0
-                    while waited < repeat_delay and not self.espam_stop:
-                        self.vsleep(100)
-                        waited += 0.1
+                if repeat_delay_ms > 0 and not self.espam_stop:
+                    self.vsleep(repeat_delay_ms)
         finally:
             self.espam_running = False
             self.espam_stop = False
@@ -3217,6 +3238,7 @@ class QuickDupeApp:
             self.overlay_window.attributes('-disabled', True)  # Prevent focus steal
             self.overlay_window.configure(bg='black')
             self.overlay_window.bell = lambda: None  # Disable bell on overlay
+            self.overlay_window.bind('<Key>', lambda e: 'break')  # Eat all key events to prevent beep
 
             # Windows: Set WS_EX_NOACTIVATE to prevent focus stealing
             self.overlay_window.update_idletasks()
