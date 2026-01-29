@@ -38,7 +38,7 @@ def _check_obfuscation_enabled():
 
 OBFUSCATION_ENABLED = _check_obfuscation_enabled()
 
-VERSION = "1.5.2"
+VERSION = "2.0.0"
 
 # Generate random app name (8-18 chars) if obfuscation enabled, otherwise use default
 if OBFUSCATION_ENABLED:
@@ -262,12 +262,41 @@ def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f)
 
+# Custom macros storage (separate from main config)
+CUSTOM_MACROS_FILE = os.path.join(os.environ.get('APPDATA', '.'), "QuickDupe", "custom_macros.json")
+
+def load_custom_macros():
+    """Load custom macros from JSON file"""
+    if os.path.exists(CUSTOM_MACROS_FILE):
+        try:
+            with open(CUSTOM_MACROS_FILE, "r") as f:
+                data = json.load(f)
+                # Ensure required structure
+                if "macros" not in data:
+                    data["macros"] = []
+                if "active_index" not in data:
+                    data["active_index"] = 0
+                return data
+        except:
+            pass
+    # Return default structure with one empty macro
+    return {
+        "macros": [{"name": "Macro 1", "hotkey": "", "speed": 1.0, "events": []}],
+        "active_index": 0
+    }
+
+def save_custom_macros(data):
+    """Save custom macros to JSON file"""
+    os.makedirs(os.path.dirname(CUSTOM_MACROS_FILE), exist_ok=True)
+    with open(CUSTOM_MACROS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
 
 class QuickDupeApp:
     def __init__(self, root):
         self.root = root
         self.root.title(APP_NAME)
-        self.root.geometry("442x800")
+        self.root.geometry("442x900")
         self.root.resizable(False, True)  # Allow vertical resize
         self.root.overrideredirect(True)  # Remove Windows title bar
 
@@ -278,7 +307,7 @@ class QuickDupeApp:
         # Force show in taskbar despite overrideredirect
         self.root.after(10, self._fix_taskbar)
 
-        # Dark mode colors (dark greys)
+        # Dark mode colors (dark greys) - will be updated from config later
         self.colors = {
             'bg': '#1e1e1e',
             'bg_light': '#2d2d2d',
@@ -290,7 +319,7 @@ class QuickDupeApp:
             'warning': '#ff9f1c'
         }
 
-        # Apply dark theme
+        # Apply dark theme (will be reapplied after config loads)
         self.root.configure(bg=self.colors['bg'])
         self.setup_dark_theme()
 
@@ -317,6 +346,24 @@ class QuickDupeApp:
             pass
 
         self.config = load_config()
+        self.custom_macros_data = load_custom_macros()
+        self.active_macro_index = self.custom_macros_data.get("active_index", 0)
+
+        # Load saved colors from config and derive companion colors
+        if "bg_color" in self.config:
+            bg = self.config['bg_color']
+            self.colors['bg'] = bg
+            # Derive companion colors based on luminance
+            self.colors['bg_light'] = self._adjust_color(bg, 25)
+            self.colors['bg_lighter'] = self._adjust_color(bg, 45)
+            self.root.configure(bg=bg)
+        if "fg_color" in self.config:
+            self.colors['text'] = self.config['fg_color']
+        if "accent_color" in self.config:
+            self.colors['highlight'] = self.config['accent_color']
+
+        # Re-apply theme with loaded colors
+        self.setup_dark_theme()
 
         # Restore window position if saved and reasonable
         saved_x = self.config.get("window_x")
@@ -395,8 +442,8 @@ class QuickDupeApp:
             tooltip = tk.Toplevel(widget)
             tooltip.wm_overrideredirect(True)
             tooltip.wm_attributes('-topmost', True)
-            tooltip.configure(bg='#333333')
-            label = tk.Label(tooltip, text=text, justify='left', bg='#333333', fg='#e0e0e0',
+            tooltip.configure(bg=self.colors['bg_light'])
+            label = tk.Label(tooltip, text=text, justify='left', bg=self.colors['bg_light'], fg=self.colors['text'],
                            relief='solid', borderwidth=1, padx=8, pady=6, font=('Segoe UI', 9))
             label.pack()
             tooltip.update_idletasks()
@@ -637,64 +684,73 @@ class QuickDupeApp:
         style.configure('.', background=self.colors['bg'], foreground=self.colors['text'])
         style.configure('TFrame', background=self.colors['bg'])
         style.configure('TLabel', background=self.colors['bg'], foreground=self.colors['text'])
-        style.configure('TButton', background=self.colors['accent'], foreground=self.colors['text'],
+        style.configure('TButton', background=self.colors['bg_light'], foreground=self.colors['text'],
                         borderwidth=0, relief='flat', focuscolor='')
-        style.map('TButton', background=[('active', self.colors['highlight'])])
+        # Button hover uses darker accent
+        accent_darker = self._darken_color(self.colors['highlight'], 50)
+        style.map('TButton', background=[('active', accent_darker)])
         style.configure('TCheckbutton', background=self.colors['bg'], foreground=self.colors['text'],
-                        indicatorbackground='#404040', indicatorforeground='white',
+                        indicatorbackground=self.colors['bg_light'], indicatorforeground=self.colors['text'],
                         indicatorsize=16)
         style.map('TCheckbutton', background=[('active', self.colors['bg'])])
         style.configure('TEntry', fieldbackground=self.colors['bg_light'], foreground=self.colors['text'],
                         borderwidth=0, relief='flat', padding=2)
-        style.configure('TCombobox', fieldbackground='#2d2d2d', background='#2d2d2d',
-                        foreground='#e0e0e0', arrowcolor='#e0e0e0')
-        style.map('TCombobox', fieldbackground=[('readonly', '#2d2d2d')],
-                  selectbackground=[('readonly', '#404040')],
-                  selectforeground=[('readonly', '#e0e0e0')])
-        self.root.option_add('*TCombobox*Listbox.background', '#2d2d2d')
-        self.root.option_add('*TCombobox*Listbox.foreground', '#e0e0e0')
-        self.root.option_add('*TCombobox*Listbox.selectBackground', '#404040')
-        self.root.option_add('*TCombobox*Listbox.selectForeground', '#e0e0e0')
-        style.configure('TSeparator', background=self.colors['accent'])
+        bg_light = self.colors['bg_light']
+        bg_lighter = self.colors.get('bg_lighter', bg_light)
+        style.configure('TCombobox', fieldbackground=bg_light, background=bg_light,
+                        foreground=self.colors['text'], arrowcolor=self.colors['text'])
+        style.map('TCombobox', fieldbackground=[('readonly', bg_light)],
+                  selectbackground=[('readonly', bg_lighter)],
+                  selectforeground=[('readonly', self.colors['text'])])
+        self.root.option_add('*TCombobox*Listbox.background', bg_light)
+        self.root.option_add('*TCombobox*Listbox.foreground', self.colors['text'])
+        self.root.option_add('*TCombobox*Listbox.selectBackground', bg_lighter)
+        self.root.option_add('*TCombobox*Listbox.selectForeground', self.colors['text'])
+        # Separator uses much darker shade of accent
+        accent_dark = self._darken_color(self.colors['highlight'], 80)
+        style.configure('TSeparator', background=accent_dark)
 
         # Scrollbar styling - use 'alt' theme element (no grip lines)
-        style.element_create('NoGrip.Scrollbar.thumb', 'from', 'alt')
-        style.layout('NoGrip.Vertical.TScrollbar', [
-            ('Vertical.Scrollbar.trough', {
-                'sticky': 'ns',
-                'children': [
-                    ('NoGrip.Scrollbar.thumb', {'sticky': 'nswe', 'expand': True})
-                ]
-            })
-        ])
+        try:
+            style.element_create('NoGrip.Scrollbar.thumb', 'from', 'alt')
+            style.layout('NoGrip.Vertical.TScrollbar', [
+                ('Vertical.Scrollbar.trough', {
+                    'sticky': 'ns',
+                    'children': [
+                        ('NoGrip.Scrollbar.thumb', {'sticky': 'nswe', 'expand': True})
+                    ]
+                })
+            ])
+        except:
+            pass  # Already created
         style.configure('NoGrip.Vertical.TScrollbar',
-                        background='#404040',
-                        troughcolor='#1e1e1e',
+                        background=bg_lighter,
+                        troughcolor=self.colors['bg'],
                         borderwidth=0,
                         relief='flat',
                         width=10)
         style.map('NoGrip.Vertical.TScrollbar',
-                  background=[('active', '#505050'), ('pressed', '#505050')])
+                  background=[('active', bg_lighter), ('pressed', bg_lighter)])
 
         # Scale (slider) styling - no grip lines, no outlines
         style.configure('TScale',
-                        background='#404040',
-                        troughcolor=self.colors['bg_light'],
+                        background=bg_lighter,
+                        troughcolor=bg_light,
                         sliderlength=20,
                         borderwidth=0,
                         relief='flat',
                         gripcount=0,
-                        lightcolor='#404040',
-                        darkcolor='#404040',
-                        bordercolor='#404040',
+                        lightcolor=bg_lighter,
+                        darkcolor=bg_lighter,
+                        bordercolor=bg_lighter,
                         focuscolor='',
                         highlightthickness=0)
         style.configure('Horizontal.TScale',
-                        background='#404040',
-                        lightcolor='#404040',
-                        darkcolor='#404040',
-                        bordercolor='#404040',
-                        troughcolor=self.colors['bg_light'])
+                        background=bg_lighter,
+                        lightcolor=bg_lighter,
+                        darkcolor=bg_lighter,
+                        bordercolor=bg_lighter,
+                        troughcolor=bg_light)
 
         # Section header style
         style.configure('Header.TLabel',
@@ -708,10 +764,11 @@ class QuickDupeApp:
                         foreground=self.colors['text_dim'])
 
     def build_ui(self):
-        # Custom title bar
-        title_bar = tk.Frame(self.root, bg=self.colors['bg_light'], height=32)
-        title_bar.pack(fill='x', side='top')
-        title_bar.pack_propagate(False)
+        # Custom title bar - store as instance var for color updates
+        self.title_bar = tk.Frame(self.root, bg=self.colors['bg_light'], height=32)
+        self.title_bar.pack(fill='x', side='top')
+        self.title_bar.pack_propagate(False)
+        title_bar = self.title_bar  # Local alias for convenience
 
         # Drag functionality (define first so we can use it)
         def start_drag(event):
@@ -782,7 +839,7 @@ class QuickDupeApp:
         self.canvas = tk.Canvas(container, bg=self.colors['bg'], highlightthickness=0)
 
         # Custom minimal scrollbar using Canvas (no grip lines, clean look)
-        self.scrollbar_canvas = tk.Canvas(container, width=10, bg='#1e1e1e', highlightthickness=0, bd=0)
+        self.scrollbar_canvas = tk.Canvas(container, width=10, bg=self.colors['bg'], highlightthickness=0, bd=0)
         self.scrollbar_thumb = None
         self.scrollbar_dragging = False
         self.scrollbar_drag_start = 0
@@ -797,7 +854,7 @@ class QuickDupeApp:
                 self.scrollbar_canvas.delete('thumb')
                 self.scrollbar_canvas.create_rectangle(
                     2, thumb_top, 8, thumb_top + thumb_height,
-                    fill='#404040', outline='', tags='thumb'
+                    fill=self.colors.get('bg_lighter', self.colors['bg_light']), outline='', tags='thumb'
                 )
 
         def on_scrollbar_click(event):
@@ -876,14 +933,14 @@ class QuickDupeApp:
         # DC Both (In+Out) row
         dc_both_frame = ttk.Frame(frame)
         dc_both_frame.pack(fill='x', padx=10, pady=2)
-        self.dc_both_btn = tk.Button(dc_both_frame, text="DC BOTH", width=12, bg='#3c3c3c', fg='#e0e0e0',
-                                     activebackground='#e94560', activeforeground='white', bd=0,
+        self.dc_both_btn = tk.Button(dc_both_frame, text="DC BOTH", width=12, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                     activebackground=self.colors['highlight'], activeforeground='white', bd=0,
                                      command=self.toggle_dc_both)
         self.dc_both_btn.pack(side='left')
         ttk.Label(dc_both_frame, text="Hotkey:").pack(side='left', padx=(10, 0))
         self.dc_both_hotkey_var = tk.StringVar(value=self.config.get("dc_both_hotkey", ""))
         self.dc_both_hotkey_entry = tk.Entry(dc_both_frame, textvariable=self.dc_both_hotkey_var, width=10, state="readonly",
-                                            bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                            bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.dc_both_hotkey_entry.pack(side='left', padx=5)
         self.dc_both_record_btn = ttk.Button(dc_both_frame, text="Set", width=4, command=self.start_recording_dc_both)
         self.dc_both_record_btn.pack(side='left')
@@ -891,14 +948,14 @@ class QuickDupeApp:
         # DC Outbound Only row
         dc_out_frame = ttk.Frame(frame)
         dc_out_frame.pack(fill='x', padx=10, pady=2)
-        self.dc_outbound_btn = tk.Button(dc_out_frame, text="DC OUTBOUND", width=12, bg='#3c3c3c', fg='#e0e0e0',
-                                         activebackground='#e94560', activeforeground='white', bd=0,
+        self.dc_outbound_btn = tk.Button(dc_out_frame, text="DC OUTBOUND", width=12, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                         activebackground=self.colors['highlight'], activeforeground='white', bd=0,
                                          command=self.toggle_dc_outbound)
         self.dc_outbound_btn.pack(side='left')
         ttk.Label(dc_out_frame, text="Hotkey:").pack(side='left', padx=(10, 0))
         self.dc_outbound_hotkey_var = tk.StringVar(value=self.config.get("dc_outbound_hotkey", ""))
         self.dc_outbound_hotkey_entry = tk.Entry(dc_out_frame, textvariable=self.dc_outbound_hotkey_var, width=10, state="readonly",
-                                                bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                                bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.dc_outbound_hotkey_entry.pack(side='left', padx=5)
         self.dc_outbound_record_btn = ttk.Button(dc_out_frame, text="Set", width=4, command=self.start_recording_dc_outbound)
         self.dc_outbound_record_btn.pack(side='left')
@@ -906,14 +963,14 @@ class QuickDupeApp:
         # DC Inbound Only row
         dc_in_frame = ttk.Frame(frame)
         dc_in_frame.pack(fill='x', padx=10, pady=2)
-        self.dc_inbound_btn = tk.Button(dc_in_frame, text="DC INBOUND", width=12, bg='#3c3c3c', fg='#e0e0e0',
-                                        activebackground='#e94560', activeforeground='white', bd=0,
+        self.dc_inbound_btn = tk.Button(dc_in_frame, text="DC INBOUND", width=12, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                        activebackground=self.colors['highlight'], activeforeground='white', bd=0,
                                         command=self.toggle_dc_inbound)
         self.dc_inbound_btn.pack(side='left')
         ttk.Label(dc_in_frame, text="Hotkey:").pack(side='left', padx=(10, 0))
         self.dc_inbound_hotkey_var = tk.StringVar(value=self.config.get("dc_inbound_hotkey", ""))
         self.dc_inbound_hotkey_entry = tk.Entry(dc_in_frame, textvariable=self.dc_inbound_hotkey_var, width=10, state="readonly",
-                                               bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                               bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.dc_inbound_hotkey_entry.pack(side='left', padx=5)
         self.dc_inbound_record_btn = ttk.Button(dc_in_frame, text="Set", width=4, command=self.start_recording_dc_inbound)
         self.dc_inbound_record_btn.pack(side='left')
@@ -921,18 +978,18 @@ class QuickDupeApp:
         # Tamper button (corrupts packets instead of dropping)
         tamper_frame = ttk.Frame(frame)
         tamper_frame.pack(fill='x', padx=10, pady=2)
-        self.tamper_btn = tk.Button(tamper_frame, text="TAMPER", width=12, bg='#3c3c3c', fg='#e0e0e0',
-                                    activebackground='#ff8c00', activeforeground='white', bd=0,
+        self.tamper_btn = tk.Button(tamper_frame, text="TAMPER", width=12, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                    activebackground=self.colors['warning'], activeforeground='white', bd=0,
                                     command=self.toggle_tamper)
         self.tamper_btn.pack(side='left')
         ttk.Label(tamper_frame, text="Hotkey:").pack(side='left', padx=(10, 0))
         self.tamper_hotkey_var = tk.StringVar(value=self.config.get("tamper_hotkey", ""))
         self.tamper_hotkey_entry = tk.Entry(tamper_frame, textvariable=self.tamper_hotkey_var, width=10, state="readonly",
-                                           bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                           bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.tamper_hotkey_entry.pack(side='left', padx=5)
         self.tamper_record_btn = ttk.Button(tamper_frame, text="Set", width=4, command=self.start_recording_tamper)
         self.tamper_record_btn.pack(side='left')
-        tamper_info = ttk.Label(tamper_frame, text=" (?)", foreground='#888888', cursor='hand2')
+        tamper_info = ttk.Label(tamper_frame, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
         tamper_info.pack(side='left')
         self._add_tooltip(tamper_info, "Corrupts packets instead of dropping them.\nCan cause weird behavior instead of full DC.")
 
@@ -942,7 +999,7 @@ class QuickDupeApp:
         trig_header = ttk.Frame(frame)
         trig_header.pack(pady=(5, 5))
         ttk.Label(trig_header, text="── Wolfpack/Triggernade Dupe ──", style='Header.TLabel').pack(side='left')
-        trig_info = ttk.Label(trig_header, text=" (?)", foreground='#888888', cursor='hand2')
+        trig_info = ttk.Label(trig_header, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
         trig_info.pack(side='left')
         self._add_tooltip(trig_info, "Record drag path from item slot to ground.\n\nMake sure inventory is full of items you're NOT duping (e.g. stacks of 1 ammo).\nFill safe pockets as well.\n\nQuick use slots must be empty EXCEPT item you're duping in first slot.\nEven utility slots must be empty.\n\nThen press Q to bring out wolfpack/triggernade/leaper pulse unit/other grenade and hit hotkey.\n\nTIP: Get it working SINGLE USE first. For auto-repeat, item must roll under your feet\nto be grabbed for looping. Drop piles of 1 of item you're duping around feet as backup copies to grab.\n\nTRIGGERNADES: Start with stack of 3 in first quick use slot - if it fails 2x it keeps going.\nTriggernades are unique: when picked up they return to the same stack.")
 
@@ -952,7 +1009,7 @@ class QuickDupeApp:
         ttk.Label(trig_hk, text="Hotkey:").pack(side='left')
         self.triggernade_hotkey_var = tk.StringVar(value=self.config.get("triggernade_hotkey", ""))
         self.triggernade_hotkey_entry = tk.Entry(trig_hk, textvariable=self.triggernade_hotkey_var, width=15, state="readonly",
-                                               bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                               bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.triggernade_hotkey_entry.pack(side='left', padx=5)
         self.triggernade_record_btn = ttk.Button(trig_hk, text="Set", width=6, command=self.start_recording_triggernade)
         self.triggernade_record_btn.pack(side='left', padx=5)
@@ -1004,7 +1061,7 @@ class QuickDupeApp:
         cook_slider.pack(side='left', padx=5)
 
         cook_entry = tk.Entry(cook_frame, width=5, justify='center', bd=0, highlightthickness=0,
-                             bg='#2d2d2d', fg='#e0e0e0', insertbackground='white')
+                             bg=self.colors['bg_light'], fg=self.colors['text'], insertbackground=self.colors['text'])
         cook_entry.pack(side='left')
         cook_entry.insert(0, str(self.trig_m1_hold_var.get()))
 
@@ -1057,11 +1114,11 @@ class QuickDupeApp:
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
-        # ===== QUICK DROP (NO DC) SECTION =====
+        # ===== THROW NO DC (EXPERIMENTAL) SECTION =====
         qd_header = ttk.Frame(frame)
         qd_header.pack(pady=(5, 5))
-        ttk.Label(qd_header, text="── Quick Drop (No DC) ──", style='Header.TLabel').pack(side='left')
-        qd_info = ttk.Label(qd_header, text=" (?)", foreground='#888888', cursor='hand2')
+        ttk.Label(qd_header, text="── Throw NO DC (experimental) ──", style='Header.TLabel').pack(side='left')
+        qd_info = ttk.Label(qd_header, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
         qd_info.pack(side='left')
         self._add_tooltip(qd_info, "Same as triggernade but NO DISCONNECT.\nUses right-click context menu drop instead of drag.\nRight-click on item → Left-click 'Drop to Ground'.\nSuper fast, almost instant.")
 
@@ -1071,7 +1128,7 @@ class QuickDupeApp:
         ttk.Label(qd_hk, text="Hotkey:").pack(side='left')
         self.quickdrop_hotkey_var = tk.StringVar(value=self.config.get("quickdrop_hotkey", ""))
         self.quickdrop_hotkey_entry = tk.Entry(qd_hk, textvariable=self.quickdrop_hotkey_var, width=15, state="readonly",
-                                         bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                         bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.quickdrop_hotkey_entry.pack(side='left', padx=5)
         self.quickdrop_record_btn = ttk.Button(qd_hk, text="Set", width=6, command=self.start_recording_quickdrop)
         self.quickdrop_record_btn.pack(side='left', padx=5)
@@ -1094,7 +1151,13 @@ class QuickDupeApp:
         self.quickdrop_repeat_var = tk.BooleanVar(value=self.config.get("quickdrop_repeat", False))
         ttk.Checkbutton(frame, text="Auto (loop until pressed again)", variable=self.quickdrop_repeat_var, command=self.save_settings).pack(anchor='w', padx=10, pady=5)
 
-        # Quick Drop status
+        # Throw NO DC Timing Sliders (using create_slider for consistency)
+        self.create_slider(frame, "Cook Time:", "quickdrop_cook", 1000, 100, 3000, "ms")
+        self.create_slider(frame, "Inventory Delay:", "quickdrop_inv_delay", 50, 10, 500, "ms")
+        self.create_slider(frame, "Menu Delay:", "quickdrop_menu_delay", 20, 10, 200, "ms")
+        self.create_slider(frame, "Drop Delay:", "quickdrop_drop_delay", 20, 10, 200, "ms")
+
+        # Throw NO DC status
         self.quickdrop_status_var = tk.StringVar(value="Ready")
         self.quickdrop_status_label = ttk.Label(frame, textvariable=self.quickdrop_status_var, style='Dim.TLabel')
         self.quickdrop_status_label.pack(pady=5)
@@ -1105,7 +1168,7 @@ class QuickDupeApp:
         mine_header = ttk.Frame(frame)
         mine_header.pack(pady=(5, 5))
         ttk.Label(mine_header, text="── Mine Dupe ──", style='Header.TLabel').pack(side='left')
-        mine_info = ttk.Label(mine_header, text=" (?)", foreground='#888888', cursor='hand2')
+        mine_info = ttk.Label(mine_header, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
         mine_info.pack(side='left')
         self._add_tooltip(mine_info, "Record drag path from mine slot to ground.\nIf using SURVIVOR AUGMENT: record drag from UTILITY SLOT or it won't work.\n\nCOOK TIME: The use circle should be ALMOST full when inventory opens.\n- If mine deploys before/while opening inventory: reduce cook time\n- Make small adjustments until circle is mostly full on open\n\nDELAY BEFORE DC: Make very light adjustments if still not working.\n\nRECONNECT TO CLICK: If mine drops from inventory but duplicate doesn't place,\nadjust this timing in small increments either direction. Watch for consistency.\n\nTIP: Get it working SINGLE USE first. For auto-repeat, item must roll under your feet\nto be grabbed for looping. Drop piles of 1 of item you're duping around feet as backup copies to grab.")
 
@@ -1115,7 +1178,7 @@ class QuickDupeApp:
         ttk.Label(mine_hk, text="Hotkey:").pack(side='left')
         self.mine_hotkey_var = tk.StringVar(value=self.config.get("mine_hotkey", ""))
         self.mine_hotkey_entry = tk.Entry(mine_hk, textvariable=self.mine_hotkey_var, width=15, state="readonly",
-                                         bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                         bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.mine_hotkey_entry.pack(side='left', padx=5)
         self.mine_record_btn = ttk.Button(mine_hk, text="Set", width=6, command=self.start_recording_mine)
         self.mine_record_btn.pack(side='left', padx=5)
@@ -1158,7 +1221,7 @@ class QuickDupeApp:
         mine_cook_slider.pack(side='left', padx=5)
 
         mine_cook_entry = tk.Entry(mine_cook_frame, width=6, justify='center', bd=0, highlightthickness=0,
-                                   bg='#2d2d2d', fg='#e0e0e0', insertbackground='white')
+                                   bg=self.colors['bg_light'], fg=self.colors['text'], insertbackground=self.colors['text'])
         mine_cook_entry.pack(side='left')
         mine_cook_entry.insert(0, str(self.mine_cook_var.get()))
 
@@ -1223,7 +1286,7 @@ class QuickDupeApp:
         ttk.Checkbutton(nudge_frame, text="Nudge mouse", variable=self.mine_nudge_var, command=self.save_settings).pack(side='left')
         self.mine_nudge_px_var = tk.IntVar(value=self.config.get("mine_nudge_px", 50))
         nudge_entry = tk.Entry(nudge_frame, textvariable=self.mine_nudge_px_var, width=5, justify='center',
-                               bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0')
+                               bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'])
         nudge_entry.pack(side='left', padx=5)
         nudge_entry.bind('<Return>', lambda e: self.save_settings())
         nudge_entry.bind('<FocusOut>', lambda e: self.save_settings())
@@ -1240,35 +1303,150 @@ class QuickDupeApp:
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
-        # ===== RECONNECT MACRO SECTION =====
-        reconnect_header = ttk.Frame(frame)
-        reconnect_header.pack(pady=(5, 5))
-        ttk.Label(reconnect_header, text="── Reconnect Macro ──", style='Header.TLabel').pack(side='left')
-        reconnect_info = ttk.Label(reconnect_header, text=" (?)", foreground='#888888', cursor='hand2')
-        reconnect_info.pack(side='left')
-        self._add_tooltip(reconnect_info, "Record and playback custom reconnect sequence.\nENTER to start, F12 to stop recording.")
+        # ===== CUSTOM MACROS SECTION =====
+        custom_macro_header = ttk.Frame(frame)
+        custom_macro_header.pack(pady=(5, 5))
+        ttk.Label(custom_macro_header, text="── Custom Macros ──", style='Header.TLabel').pack(side='left')
+        custom_macro_info = ttk.Label(custom_macro_header, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
+        custom_macro_info.pack(side='left')
+        self._add_tooltip(custom_macro_info, "Record and playback custom macros.\nCtrl+Enter to start/stop recording.\nCan record any key including ESC.")
+
+        # Tab buttons container
+        self.macro_tabs_container = ttk.Frame(frame)
+        self.macro_tabs_container.pack(fill='x', padx=10, pady=5)
+
+        # Left scroll button (hidden by default)
+        self.macro_scroll_left = tk.Button(self.macro_tabs_container, text="◀",
+                                           bg=self.colors['bg_light'], fg=self.colors['text'],
+                                           bd=0, font=('Arial', 8), padx=4, pady=2,
+                                           command=lambda: self._scroll_macro_tabs(-1))
+
+        # Canvas for scrollable tabs
+        self.macro_tabs_canvas = tk.Canvas(self.macro_tabs_container, height=24,
+                                           highlightthickness=0, bg=self.colors['bg'])
+        self.macro_tabs_canvas.pack(side='left', fill='x', expand=True)
+
+        # Right scroll button (hidden by default)
+        self.macro_scroll_right = tk.Button(self.macro_tabs_container, text="▶",
+                                            bg=self.colors['bg_light'], fg=self.colors['text'],
+                                            bd=0, font=('Arial', 8), padx=4, pady=2,
+                                            command=lambda: self._scroll_macro_tabs(1))
+
+        # Add button (always visible)
+        self.macro_add_btn = tk.Button(self.macro_tabs_container, text="+",
+                                       bg=self.colors['bg_light'], fg=self.colors['text'],
+                                       bd=0, font=('Arial', 9), padx=6, pady=2,
+                                       command=self._add_new_macro)
+        self.macro_add_btn.pack(side='left', padx=2)
+
+        # Frame inside canvas for tab buttons
+        self.macro_tabs_frame = ttk.Frame(self.macro_tabs_canvas)
+        self.macro_tabs_window = self.macro_tabs_canvas.create_window((0, 0), window=self.macro_tabs_frame, anchor='nw')
+
+        # Configure scrolling
+        self.macro_tabs_frame.bind('<Configure>', self._update_macro_tabs_scroll)
+        self.macro_tabs_canvas.bind('<MouseWheel>', lambda e: self._scroll_macro_tabs(-1 if e.delta > 0 else 1))
+
+        self.macro_tab_buttons = []
+        self._build_macro_tabs()
+
+        # Macro content frame (holds name, hotkey, speed, buttons)
+        self.macro_content_frame = ttk.Frame(frame)
+        self.macro_content_frame.pack(fill='x', padx=10)
+
+        # Name row
+        name_frame = ttk.Frame(self.macro_content_frame)
+        name_frame.pack(fill='x', pady=2)
+        ttk.Label(name_frame, text="Name:").pack(side='left')
+        self.macro_name_var = tk.StringVar()
+        self.macro_name_entry = tk.Entry(name_frame, textvariable=self.macro_name_var, width=20,
+                                         bd=0, highlightthickness=1, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                         insertbackground=self.colors['text'], highlightbackground=self.colors.get('bg_lighter', '#555555'))
+        self.macro_name_entry.pack(side='left', padx=5)
+        self.macro_name_entry.bind('<Return>', lambda e: self._on_macro_name_change())
+        self.macro_name_entry.bind('<FocusOut>', lambda e: self._on_macro_name_change())
 
         # Hotkey row
-        reconnect_hk_frame = ttk.Frame(frame)
-        reconnect_hk_frame.pack(fill='x', padx=10, pady=5)
-        ttk.Label(reconnect_hk_frame, text="Hotkey:").pack(side='left')
-        self.reconnect_hotkey_var = tk.StringVar(value=self.config.get("reconnect_hotkey", ""))
-        self.reconnect_hotkey_entry = tk.Entry(reconnect_hk_frame, textvariable=self.reconnect_hotkey_var, width=15, state="readonly",
-                                               bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
-        self.reconnect_hotkey_entry.pack(side='left', padx=5)
-        self.reconnect_hk_btn = ttk.Button(reconnect_hk_frame, text="Set", width=6, command=self.start_recording_reconnect_hotkey)
-        self.reconnect_hk_btn.pack(side='left', padx=5)
+        hotkey_frame = ttk.Frame(self.macro_content_frame)
+        hotkey_frame.pack(fill='x', pady=2)
+        ttk.Label(hotkey_frame, text="Hotkey:").pack(side='left')
+        self.macro_hotkey_var = tk.StringVar()
+        self.macro_hotkey_entry = tk.Entry(hotkey_frame, textvariable=self.macro_hotkey_var, width=15, state="readonly",
+                                           bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'],
+                                           readonlybackground=self.colors['bg_light'])
+        self.macro_hotkey_entry.pack(side='left', padx=5)
+        self.macro_hk_btn = ttk.Button(hotkey_frame, text="Set", width=6, command=self._start_recording_macro_hotkey)
+        self.macro_hk_btn.pack(side='left', padx=5)
 
-        reconnect_btn_frame = ttk.Frame(frame)
-        reconnect_btn_frame.pack(pady=5)
-        self.reconnect_record_btn = ttk.Button(reconnect_btn_frame, text="Record", width=10, command=self.start_reconnect_recording)
-        self.reconnect_record_btn.pack(side='left', padx=2)
-        self.reconnect_play_btn = ttk.Button(reconnect_btn_frame, text="Play", width=10, command=self.play_reconnect_macro)
-        self.reconnect_play_btn.pack(side='left', padx=2)
+        # Speed slider row
+        speed_frame = ttk.Frame(self.macro_content_frame)
+        speed_frame.pack(fill='x', pady=2)
+        ttk.Label(speed_frame, text="Speed:").pack(side='left')
+        self.macro_speed_var = tk.DoubleVar(value=1.0)
+        self.macro_speed_slider = ttk.Scale(speed_frame, from_=0.1, to=5.0, variable=self.macro_speed_var,
+                                            orient='horizontal', length=120, command=self._on_macro_speed_change)
+        self.macro_speed_slider.pack(side='left', padx=5)
+        self.macro_speed_label = ttk.Label(speed_frame, text="1.0x", width=5)
+        self.macro_speed_label.pack(side='left')
 
-        self.reconnect_status_var = tk.StringVar(value="No recording")
-        self.reconnect_status_label = ttk.Label(frame, textvariable=self.reconnect_status_var, style='Dim.TLabel')
-        self.reconnect_status_label.pack(pady=5)
+        # Keep Timing checkbox
+        self.macro_keep_timing_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(speed_frame, text="Keep Timing", variable=self.macro_keep_timing_var,
+                        command=self._on_macro_keep_timing_change).pack(side='left', padx=10)
+
+        # Repeat options row
+        repeat_frame = ttk.Frame(self.macro_content_frame)
+        repeat_frame.pack(fill='x', pady=2)
+
+        self.macro_repeat_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(repeat_frame, text="Repeat", variable=self.macro_repeat_var,
+                        command=self._on_macro_repeat_change).pack(side='left')
+
+        self.macro_repeat_times_var = tk.StringVar(value="1")
+        self.macro_repeat_times_entry = tk.Entry(repeat_frame, textvariable=self.macro_repeat_times_var, width=4,
+                                                  bd=0, highlightthickness=1, bg=self.colors['bg_light'],
+                                                  fg=self.colors['text'], justify='center')
+        self.macro_repeat_times_entry.pack(side='left', padx=2)
+        # Only allow integers
+        self.macro_repeat_times_entry.bind('<KeyRelease>', self._validate_repeat_times)
+        ttk.Label(repeat_frame, text="times").pack(side='left')
+
+        self.macro_repeat_infinite_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(repeat_frame, text="∞", variable=self.macro_repeat_infinite_var,
+                        command=self._on_macro_infinite_change).pack(side='left', padx=5)
+
+        ttk.Label(repeat_frame, text="Delay:").pack(side='left', padx=(10, 0))
+        self.macro_repeat_delay_var = tk.StringVar(value="0")
+        self.macro_repeat_delay_entry = tk.Entry(repeat_frame, textvariable=self.macro_repeat_delay_var, width=4,
+                                                  bd=0, highlightthickness=1, bg=self.colors['bg_light'],
+                                                  fg=self.colors['text'], justify='center')
+        self.macro_repeat_delay_entry.pack(side='left', padx=2)
+        self.macro_repeat_delay_entry.bind('<KeyRelease>', self._validate_repeat_delay)
+        ttk.Label(repeat_frame, text="s").pack(side='left')
+
+        # Buttons row
+        macro_btn_frame = ttk.Frame(self.macro_content_frame)
+        macro_btn_frame.pack(pady=2)
+        self.macro_record_btn = ttk.Button(macro_btn_frame, text="Record", width=8, command=self.start_custom_macro_recording)
+        self.macro_record_btn.pack(side='left', padx=2)
+        self.macro_play_btn = ttk.Button(macro_btn_frame, text="Play", width=8, command=self._toggle_macro_play)
+        self.macro_play_btn.pack(side='left', padx=2)
+        self.macro_delete_btn = ttk.Button(macro_btn_frame, text="Delete", width=6, command=self._delete_current_macro)
+        self.macro_delete_btn.pack(side='left', padx=2)
+
+        # Export/Import row
+        macro_io_frame = ttk.Frame(self.macro_content_frame)
+        macro_io_frame.pack(pady=2)
+        ttk.Button(macro_io_frame, text="Export", width=8, command=self._export_current_macro).pack(side='left', padx=2)
+        ttk.Button(macro_io_frame, text="Import", width=8, command=self._import_macro).pack(side='left', padx=2)
+
+        # Status label
+        self.macro_status_var = tk.StringVar(value="Ctrl+Enter to record")
+        self.macro_status_label = ttk.Label(frame, textvariable=self.macro_status_var, style='Dim.TLabel')
+        self.macro_status_label.pack(pady=(5, 10))
+
+        # Load current macro data into UI
+        self._load_current_macro_to_ui()
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
@@ -1276,7 +1454,7 @@ class QuickDupeApp:
         espam_header = ttk.Frame(frame)
         espam_header.pack(pady=(5, 5))
         ttk.Label(espam_header, text="── E-Spam Collection ──", style='Header.TLabel').pack(side='left')
-        espam_info = ttk.Label(espam_header, text=" (?)", foreground='#888888', cursor='hand2')
+        espam_info = ttk.Label(espam_header, text=" (?)", foreground=self.colors['text_dim'], cursor='hand2')
         espam_info.pack(side='left')
         self._add_tooltip(espam_info, "Used to gather already completed mines/triggernades.")
 
@@ -1285,7 +1463,7 @@ class QuickDupeApp:
         ttk.Label(espam_hk, text="Hotkey:").pack(side='left')
         self.espam_hotkey_var = tk.StringVar(value=self.config.get("espam_hotkey", ""))
         self.espam_hotkey_entry = tk.Entry(espam_hk, textvariable=self.espam_hotkey_var, width=15, state="readonly",
-                                         bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                         bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.espam_hotkey_entry.pack(side='left', padx=5)
         self.espam_record_btn = ttk.Button(espam_hk, text="Set", width=6, command=self.start_recording_espam)
         self.espam_record_btn.pack(side='left', padx=5)
@@ -1313,7 +1491,7 @@ class QuickDupeApp:
         ttk.Label(min_hk_frame, text="Minimize:").pack(side='left')
         self.minimize_hotkey_var = tk.StringVar(value=self.config.get("minimize_hotkey", ""))
         self.minimize_hotkey_entry = tk.Entry(min_hk_frame, textvariable=self.minimize_hotkey_var, width=10, state="readonly",
-                                             bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                             bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.minimize_hotkey_entry.pack(side='left', padx=5)
         self.minimize_record_btn = ttk.Button(min_hk_frame, text="Set", width=4, command=self.start_recording_minimize)
         self.minimize_record_btn.pack(side='left')
@@ -1325,11 +1503,59 @@ class QuickDupeApp:
         ttk.Label(tray_hk_frame, text="Minimize to Tray:").pack(side='left')
         self.tray_hotkey_var = tk.StringVar(value=self.config.get("tray_hotkey", ""))
         self.tray_hotkey_entry = tk.Entry(tray_hk_frame, textvariable=self.tray_hotkey_var, width=10, state="readonly",
-                                         bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                         bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.tray_hotkey_entry.pack(side='left', padx=5)
         self.tray_record_btn = ttk.Button(tray_hk_frame, text="Set", width=4, command=self.start_recording_tray)
         self.tray_record_btn.pack(side='left')
         self.recording_tray = False
+
+        ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
+
+        # ===== APPEARANCE SETTINGS =====
+        ttk.Label(frame, text="── Appearance ──", style='Header.TLabel').pack(pady=(5, 5))
+
+        # Color pickers in a row
+        colors_frame = ttk.Frame(frame)
+        colors_frame.pack(fill='x', padx=10, pady=5)
+
+        # Background color
+        ttk.Label(colors_frame, text="BG:").pack(side='left')
+        self.bg_color_var = tk.StringVar(value=self.config.get("bg_color", "#1e1e1e"))
+        self.bg_color_btn = tk.Button(colors_frame, text="", width=3, height=1,
+                                      bg=self.bg_color_var.get(), relief='solid', bd=1,
+                                      cursor='hand2', command=self._pick_bg_color)
+        self.bg_color_btn.pack(side='left', padx=(2, 10))
+
+        # Text color
+        ttk.Label(colors_frame, text="Text:").pack(side='left')
+        self.fg_color_var = tk.StringVar(value=self.config.get("fg_color", "#e0e0e0"))
+        self.fg_color_btn = tk.Button(colors_frame, text="", width=3, height=1,
+                                      bg=self.fg_color_var.get(), relief='solid', bd=1,
+                                      cursor='hand2', command=self._pick_fg_color)
+        self.fg_color_btn.pack(side='left', padx=(2, 10))
+
+        # Accent color
+        ttk.Label(colors_frame, text="Accent:").pack(side='left')
+        self.accent_color_var = tk.StringVar(value=self.config.get("accent_color", "#e94560"))
+        self.accent_color_btn = tk.Button(colors_frame, text="", width=3, height=1,
+                                          bg=self.accent_color_var.get(), relief='solid', bd=1,
+                                          cursor='hand2', command=self._pick_accent_color)
+        self.accent_color_btn.pack(side='left', padx=2)
+
+        # Transparency slider
+        trans_frame = ttk.Frame(frame)
+        trans_frame.pack(fill='x', padx=10, pady=2)
+        ttk.Label(trans_frame, text="Transparency:").pack(side='left')
+        loaded_trans = self.config.get("transparency", 100)
+        self.transparency_var = tk.IntVar(value=loaded_trans)
+        trans_slider = ttk.Scale(trans_frame, from_=50, to=100, variable=self.transparency_var,
+                                orient='horizontal', length=100, command=self._on_transparency_change)
+        trans_slider.pack(side='left', padx=5)
+        self.trans_label = ttk.Label(trans_frame, text=f"{loaded_trans}%")
+        self.trans_label.pack(side='left')
+
+        # Apply initial transparency
+        self._apply_transparency()
 
         ttk.Separator(frame, orient='horizontal').pack(fill='x', padx=10, pady=10)
 
@@ -1349,13 +1575,13 @@ class QuickDupeApp:
         ttk.Label(stop_frame, text="Stop All:").pack(side='left')
         self.stop_hotkey_var = tk.StringVar(value=self.config.get("stop_hotkey", "esc"))
         self.stop_hotkey_entry = tk.Entry(stop_frame, textvariable=self.stop_hotkey_var, width=15, state="readonly",
-                                          bd=0, highlightthickness=0, bg='#2d2d2d', fg='#e0e0e0', readonlybackground='#2d2d2d')
+                                          bd=0, highlightthickness=0, bg=self.colors['bg_light'], fg=self.colors['text'], readonlybackground=self.colors['bg_light'])
         self.stop_hotkey_entry.pack(side='left', padx=5)
         self.stop_record_btn = ttk.Button(stop_frame, text="Set", width=6, command=self.start_recording_stop)
         self.stop_record_btn.pack(side='left', padx=5)
 
         # ===== RESIZE GRIP (bottom of window) =====
-        resize_grip = tk.Frame(self.root, bg='#2d2d2d', height=8, cursor='sb_v_double_arrow')
+        resize_grip = tk.Frame(self.root, bg=self.colors['bg_light'], height=8, cursor='sb_v_double_arrow')
         resize_grip.pack(side='bottom', fill='x')
 
         def start_resize(event):
@@ -1413,7 +1639,7 @@ class QuickDupeApp:
 
         # Editable entry instead of label (no border)
         entry = tk.Entry(row, width=5, justify='center', bd=0, highlightthickness=0,
-                        bg='#2d2d2d', fg='#e0e0e0', insertbackground='white')
+                        bg=self.colors['bg_light'], fg=self.colors['text'], insertbackground=self.colors['text'])
         entry.pack(side='left')
         entry.insert(0, str(var.get()))
 
@@ -1642,45 +1868,407 @@ class QuickDupeApp:
         pynput_keyboard.release('q')
         print(f"[Q RADIAL] Done - selected {direction}")
 
-    def start_reconnect_recording(self):
-        """Record all clicks and key presses with positions"""
+    # ===== CUSTOM MACROS METHODS =====
+
+    def _build_macro_tabs(self):
+        """Build the tab buttons for custom macros"""
+        # Clear existing buttons
+        for widget in self.macro_tabs_frame.winfo_children():
+            widget.destroy()
+        self.macro_tab_buttons = []
+
+        bg = self.colors['bg']
+        bg_light = self.colors['bg_light']
+        bg_lighter = self.colors.get('bg_lighter', self._adjust_color(bg, 45))
+        text = self.colors['text']
+        highlight = self.colors['highlight']
+
+        # Update canvas and scroll buttons colors
+        if hasattr(self, 'macro_tabs_canvas'):
+            self.macro_tabs_canvas.config(bg=bg)
+        if hasattr(self, 'macro_scroll_left'):
+            self.macro_scroll_left.config(bg=bg_light, fg=text)
+            self.macro_scroll_right.config(bg=bg_light, fg=text)
+            self.macro_add_btn.config(bg=bg_light, fg=text)
+
+        macros = self.custom_macros_data.get("macros", [])
+        for i, macro in enumerate(macros):
+            is_active = (i == self.active_macro_index)
+            name = macro.get("name", f"M{i+1}")
+            if is_active:
+                btn = tk.Button(self.macro_tabs_frame, text=name,
+                               bg=bg_lighter, fg=text,
+                               activebackground=highlight, activeforeground='white',
+                               bd=0, relief='flat', cursor='hand2', padx=6, pady=2,
+                               font=('Arial', 9),
+                               command=lambda idx=i: self._on_macro_tab_click(idx))
+            else:
+                btn = tk.Button(self.macro_tabs_frame, text=name,
+                               bg=bg_light, fg=text,
+                               activebackground=bg_lighter, activeforeground=text,
+                               bd=0, relief='flat', cursor='hand2', padx=6, pady=2,
+                               font=('Arial', 9),
+                               command=lambda idx=i: self._on_macro_tab_click(idx))
+            btn.pack(side='left', padx=1)
+            self.macro_tab_buttons.append(btn)
+
+        self._update_macro_tabs_scroll()
+        self._update_macro_entry_colors()
+
+    def _update_macro_tabs_scroll(self, event=None):
+        """Update scroll region and show/hide scroll buttons"""
+        self.macro_tabs_frame.update_idletasks()
+        if hasattr(self, 'macro_tabs_canvas'):
+            self.macro_tabs_canvas.configure(scrollregion=self.macro_tabs_canvas.bbox('all'))
+            # Show/hide scroll buttons based on content width
+            canvas_width = self.macro_tabs_canvas.winfo_width()
+            content_width = self.macro_tabs_frame.winfo_reqwidth()
+            if content_width > canvas_width and canvas_width > 1:
+                self.macro_scroll_left.pack(side='left', before=self.macro_tabs_canvas)
+                self.macro_scroll_right.pack(side='left', after=self.macro_tabs_canvas, before=self.macro_add_btn)
+            else:
+                self.macro_scroll_left.pack_forget()
+                self.macro_scroll_right.pack_forget()
+
+    def _scroll_macro_tabs(self, direction):
+        """Scroll macro tabs left or right"""
+        self.macro_tabs_canvas.xview_scroll(direction * 3, 'units')
+
+    def _update_macro_entry_colors(self):
+        """Update Entry widget colors to match current theme"""
+        bg_light = self.colors['bg_light']
+        text = self.colors['text']
+        # Update name entry
+        if hasattr(self, 'macro_name_entry'):
+            self.macro_name_entry.config(bg=bg_light, fg=text, insertbackground=text,
+                                         highlightbackground=self.colors.get('bg_lighter', '#555555'))
+        # Update hotkey entry
+        if hasattr(self, 'macro_hotkey_entry'):
+            self.macro_hotkey_entry.config(bg=bg_light, fg=text, readonlybackground=bg_light)
+
+    def _on_macro_tab_click(self, index):
+        """Switch to a different macro tab"""
+        # Save current macro first
+        self._save_current_macro_from_ui()
+        # Switch to new index
+        self.active_macro_index = index
+        self.custom_macros_data["active_index"] = index
+        save_custom_macros(self.custom_macros_data)
+        # Rebuild tabs to update visual state
+        self._build_macro_tabs()
+        # Load new macro into UI
+        self._load_current_macro_to_ui()
+
+    def _add_new_macro(self):
+        """Add a new macro"""
+        macros = self.custom_macros_data.get("macros", [])
+        new_name = f"Macro {len(macros) + 1}"
+        new_macro = {"name": new_name, "hotkey": "", "speed": 1.0, "events": []}
+        macros.append(new_macro)
+        self.custom_macros_data["macros"] = macros
+        self.active_macro_index = len(macros) - 1
+        self.custom_macros_data["active_index"] = self.active_macro_index
+        save_custom_macros(self.custom_macros_data)
+        self._build_macro_tabs()
+        self._load_current_macro_to_ui()
+        self.register_hotkeys()
+
+    def _delete_current_macro(self):
+        """Delete the current macro"""
+        macros = self.custom_macros_data.get("macros", [])
+        if len(macros) <= 1:
+            self.show_overlay("Can't delete last macro", force=True)
+            return
+        del macros[self.active_macro_index]
+        self.custom_macros_data["macros"] = macros
+        # Adjust active index if needed
+        if self.active_macro_index >= len(macros):
+            self.active_macro_index = len(macros) - 1
+        self.custom_macros_data["active_index"] = self.active_macro_index
+        save_custom_macros(self.custom_macros_data)
+        self._build_macro_tabs()
+        self._load_current_macro_to_ui()
+        self.register_hotkeys()
+
+    def _export_current_macro(self):
+        """Export the current macro to a JSON file"""
+        macro = self._get_current_macro()
+        if not macro.get("events"):
+            self.show_overlay("No recording to export", force=True)
+            return
+
+        name = macro.get("name", "macro")
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON", "*.json")],
+            initialfile=f"{name}.json"
+        )
+        if path:
+            with open(path, 'w') as f:
+                json.dump(macro, f, indent=2)
+            self.show_overlay(f"Exported: {name}", force=True)
+            print(f"[MACRO] Exported '{name}' to {path}")
+
+    def _import_macro(self):
+        """Import a macro from a JSON file"""
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        if path:
+            try:
+                with open(path, 'r') as f:
+                    imported = json.load(f)
+
+                # Validate it has the expected structure
+                if "events" not in imported:
+                    # Maybe it's old format (just array of events)
+                    if isinstance(imported, list):
+                        imported = {"name": "Imported", "hotkey": "", "speed": 1.0, "events": imported}
+                    else:
+                        self.show_overlay("Invalid macro file", force=True)
+                        return
+
+                # Add as new macro
+                macros = self.custom_macros_data.get("macros", [])
+                # Ensure unique name
+                base_name = imported.get("name", "Imported")
+                name = base_name
+                counter = 1
+                while any(m.get("name") == name for m in macros):
+                    name = f"{base_name} ({counter})"
+                    counter += 1
+                imported["name"] = name
+
+                macros.append(imported)
+                self.custom_macros_data["macros"] = macros
+                self.active_macro_index = len(macros) - 1
+                self.custom_macros_data["active_index"] = self.active_macro_index
+                save_custom_macros(self.custom_macros_data)
+                self._build_macro_tabs()
+                self._load_current_macro_to_ui()
+                self.register_hotkeys()
+                self.show_overlay(f"Imported: {name}", force=True)
+                print(f"[MACRO] Imported '{name}' from {path}")
+            except Exception as e:
+                self.show_overlay("Import failed", force=True)
+                print(f"[MACRO] Import failed: {e}")
+
+    def _get_current_macro(self):
+        """Get the current macro data"""
+        macros = self.custom_macros_data.get("macros", [])
+        if 0 <= self.active_macro_index < len(macros):
+            return macros[self.active_macro_index]
+        return {"name": "Macro 1", "hotkey": "", "speed": 1.0, "events": []}
+
+    def _load_current_macro_to_ui(self):
+        """Load current macro data into UI"""
+        macro = self._get_current_macro()
+        self.macro_name_var.set(macro.get("name", ""))
+        self.macro_hotkey_var.set(macro.get("hotkey", ""))
+        speed = macro.get("speed", 1.0)
+        self.macro_speed_var.set(speed)
+        self.macro_speed_label.config(text=f"{speed:.1f}x")
+        self.macro_keep_timing_var.set(macro.get("keep_timing", False))
+        # Repeat settings
+        self.macro_repeat_var.set(macro.get("repeat", False))
+        self.macro_repeat_times_var.set(str(macro.get("repeat_times", 1)))
+        self.macro_repeat_infinite_var.set(macro.get("repeat_infinite", False))
+        self.macro_repeat_delay_var.set(str(macro.get("repeat_delay", 0)))
+        # Update infinite state
+        if self.macro_repeat_infinite_var.get():
+            self.macro_repeat_times_entry.config(state='disabled')
+        else:
+            self.macro_repeat_times_entry.config(state='normal')
+        # Update status
+        events = macro.get("events", [])
+        if events:
+            self.macro_status_var.set(f"{len(events)} events recorded")
+        else:
+            self.macro_status_var.set("Ctrl+Enter to record")
+
+    def _save_current_macro_from_ui(self):
+        """Save UI data to current macro"""
+        macros = self.custom_macros_data.get("macros", [])
+        if 0 <= self.active_macro_index < len(macros):
+            macros[self.active_macro_index]["name"] = self.macro_name_var.get()
+            macros[self.active_macro_index]["hotkey"] = self.macro_hotkey_var.get()
+            macros[self.active_macro_index]["speed"] = self.macro_speed_var.get()
+            macros[self.active_macro_index]["keep_timing"] = self.macro_keep_timing_var.get()
+            macros[self.active_macro_index]["repeat"] = self.macro_repeat_var.get()
+            macros[self.active_macro_index]["repeat_times"] = int(self.macro_repeat_times_var.get() or 1)
+            macros[self.active_macro_index]["repeat_infinite"] = self.macro_repeat_infinite_var.get()
+            macros[self.active_macro_index]["repeat_delay"] = float(self.macro_repeat_delay_var.get() or 0)
+            save_custom_macros(self.custom_macros_data)
+
+    def _on_macro_name_change(self):
+        """Called when macro name is changed"""
+        self._save_current_macro_from_ui()
+        self._build_macro_tabs()  # Update tab button text
+
+    def _on_macro_speed_change(self, value):
+        """Called when speed slider changes"""
+        speed = float(value)
+        # Round to 1 decimal place
+        speed = round(speed, 1)
+        self.macro_speed_var.set(speed)
+        self.macro_speed_label.config(text=f"{speed:.1f}x")
+        self._save_current_macro_from_ui()
+
+    def _on_macro_keep_timing_change(self):
+        """Called when keep timing checkbox changes"""
+        self._save_current_macro_from_ui()
+
+    def _on_macro_repeat_change(self):
+        """Called when repeat checkbox changes"""
+        self._save_current_macro_from_ui()
+
+    def _on_macro_infinite_change(self):
+        """Called when infinite repeat checkbox changes"""
+        if self.macro_repeat_infinite_var.get():
+            self.macro_repeat_times_entry.config(state='disabled')
+        else:
+            self.macro_repeat_times_entry.config(state='normal')
+        self._save_current_macro_from_ui()
+
+    def _validate_repeat_times(self, event=None):
+        """Validate repeat times is integer only"""
+        val = self.macro_repeat_times_var.get()
+        # Remove non-digits
+        cleaned = ''.join(c for c in val if c.isdigit())
+        if cleaned != val:
+            self.macro_repeat_times_var.set(cleaned)
+        if cleaned == '':
+            self.macro_repeat_times_var.set('1')
+        self._save_current_macro_from_ui()
+
+    def _validate_repeat_delay(self, event=None):
+        """Validate repeat delay is number only"""
+        val = self.macro_repeat_delay_var.get()
+        # Allow digits and one decimal point
+        cleaned = ''
+        has_dot = False
+        for c in val:
+            if c.isdigit():
+                cleaned += c
+            elif c == '.' and not has_dot:
+                cleaned += c
+                has_dot = True
+        if cleaned != val:
+            self.macro_repeat_delay_var.set(cleaned)
+        self._save_current_macro_from_ui()
+
+    def _toggle_macro_play(self):
+        """Toggle macro play/stop"""
+        if getattr(self, '_macro_stop', True) == False:
+            # Currently playing, stop it
+            self._macro_stop = True
+            self.macro_play_btn.config(text="Play")
+            self.macro_status_var.set("Stopped")
+        else:
+            # Not playing, start it
+            self.play_custom_macro()
+
+    def _start_recording_macro_hotkey(self):
+        """Start recording a hotkey for the current macro"""
+        self._recording_macro_hotkey = True
+        self.macro_hk_btn.config(text="...")
+        self.macro_hotkey_var.set("Press key...")
+        self.root.bind("<KeyPress>", self._on_macro_hotkey_press)
+        self.root.focus_force()
+
+    def _on_macro_hotkey_press(self, event):
+        """Handle hotkey press during macro hotkey recording"""
+        if not getattr(self, '_recording_macro_hotkey', False):
+            return
+
+        key = event.keysym.lower()
+        if key in ('escape', 'esc'):
+            # Cancel recording
+            self.macro_hotkey_var.set(self._get_current_macro().get("hotkey", ""))
+            self.macro_hk_btn.config(text="Set")
+            self._recording_macro_hotkey = False
+            self.root.unbind("<KeyPress>")
+            return
+
+        # Build hotkey string with modifiers
+        parts = []
+        if event.state & 0x4:  # Control
+            parts.append('ctrl')
+        if event.state & 0x8:  # Alt
+            parts.append('alt')
+        if event.state & 0x1:  # Shift
+            parts.append('shift')
+
+        # Map tkinter keysyms to keyboard library names
+        tkinter_to_keyboard = {
+            'next': 'page down', 'prior': 'page up', 'escape': 'esc', 'return': 'enter',
+            'control_l': 'ctrl', 'control_r': 'ctrl', 'alt_l': 'alt', 'alt_r': 'alt',
+            'shift_l': 'shift', 'shift_r': 'shift', 'space': 'space', 'tab': 'tab',
+            'backspace': 'backspace', 'minus': '-', 'plus': '+', 'equal': '=',
+        }
+        mapped_key = tkinter_to_keyboard.get(key, key)
+
+        modifier_keys = ['ctrl', 'alt', 'shift', 'control_l', 'control_r', 'alt_l', 'alt_r', 'shift_l', 'shift_r']
+        if key not in modifier_keys:
+            parts.append(mapped_key)
+            hotkey_str = '+'.join(parts)
+            self.macro_hotkey_var.set(hotkey_str)
+            self.macro_hk_btn.config(text="Set")
+            self._recording_macro_hotkey = False
+            self.root.unbind("<KeyPress>")
+            self._save_current_macro_from_ui()
+            self.register_hotkeys()
+            print(f"[MACRO HOTKEY] Registered: '{hotkey_str}'")
+
+    def start_custom_macro_recording(self):
+        """Record a custom macro - Ctrl+Enter to start/stop"""
         from pynput import mouse, keyboard as kb
 
-        self.reconnect_record_btn.config(text="Press ENTER...")
-        self.reconnect_status_var.set("Press ENTER to start recording")
-        self.show_overlay("Press ENTER to START", force=True)
+        self.macro_record_btn.config(text="Ctrl+Enter...")
+        self.macro_status_var.set("Press Ctrl+Enter to start")
+        self.show_overlay("Press Ctrl+Enter to START", force=True)
 
-        self._reconnect_recording = []
-        self._reconnect_recording_active = False
-        self._keys_held = set()  # Track held keys to avoid repeat spam
+        self._custom_macro_recording = []
+        self._custom_macro_recording_active = False
+        self._custom_macro_keys_held = set()
+        self._ctrl_held = False
+        self._macro_rec_start_time = None
 
         def on_click(x, y, button, pressed):
-            if not self._reconnect_recording_active:
+            if not self._custom_macro_recording_active:
                 return
             btn_name = str(button).replace('Button.', '')
-            event = {'type': 'click', 'x': x, 'y': y, 'button': btn_name, 'down': pressed}
-            self._reconnect_recording.append(event)
+            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000  # ms
+            event = {'type': 'click', 'x': x, 'y': y, 'button': btn_name, 'down': pressed, 'time': timestamp}
+            self._custom_macro_recording.append(event)
             action = "down" if pressed else "up"
-            print(f"[RECONNECT REC] {btn_name} {action} at ({x}, {y})")
+            print(f"[MACRO REC] {btn_name} {action} at ({x}, {y}) @ {timestamp:.0f}ms")
 
         def on_key_press(key):
-            # ENTER toggles recording
-            if key == kb.Key.enter:
-                if not self._reconnect_recording_active:
-                    self._reconnect_recording_active = True
-                    self._keys_held.clear()
-                    self.root.after(0, lambda: self.reconnect_record_btn.config(text="Recording..."))
-                    self.root.after(0, lambda: self.reconnect_status_var.set("Recording... ENTER to stop"))
-                    self.root.after(0, lambda: self.show_overlay("Recording... ENTER to stop", force=True))
+            # Track ctrl state
+            if key in (kb.Key.ctrl, kb.Key.ctrl_l, kb.Key.ctrl_r):
+                self._ctrl_held = True
+                return
+
+            # Ctrl+Enter toggles recording
+            if key == kb.Key.enter and self._ctrl_held:
+                if not self._custom_macro_recording_active:
+                    # Start recording
+                    self._custom_macro_recording_active = True
+                    self._custom_macro_keys_held.clear()
+                    self._custom_macro_recording = []
+                    self._macro_rec_start_time = time.perf_counter()
+                    self.root.after(0, lambda: self.macro_record_btn.config(text="Recording..."))
+                    self.root.after(0, lambda: self.macro_status_var.set("Recording... Ctrl+Enter to stop"))
+                    self.root.after(0, lambda: self.show_overlay("Recording... Ctrl+Enter to stop", force=True))
                 else:
+                    # Stop recording
                     mouse_listener.stop()
                     keyboard_listener.stop()
-                    self._reconnect_recording_active = False
-                    self._save_reconnect_recording()
+                    self._custom_macro_recording_active = False
+                    self._save_custom_macro_recording()
                     return False
                 return
 
-            if not self._reconnect_recording_active:
+            if not self._custom_macro_recording_active:
                 return
 
             # Get key name
@@ -1690,19 +2278,27 @@ class QuickDupeApp:
                 key_name = str(key).replace('Key.', '')
 
             # Skip if key already held (avoid repeat spam)
-            if key_name in self._keys_held:
+            if key_name in self._custom_macro_keys_held:
                 return
-            self._keys_held.add(key_name)
+            self._custom_macro_keys_held.add(key_name)
 
-            event = {'type': 'key', 'key': key_name, 'down': True}
-            self._reconnect_recording.append(event)
-            print(f"[RECONNECT REC] key {key_name} down")
+            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000
+            event = {'type': 'key', 'key': key_name, 'down': True, 'time': timestamp}
+            self._custom_macro_recording.append(event)
+            print(f"[MACRO REC] key {key_name} down @ {timestamp:.0f}ms")
 
         def on_key_release(key):
-            if not self._reconnect_recording_active:
+            # Track ctrl state
+            if key in (kb.Key.ctrl, kb.Key.ctrl_l, kb.Key.ctrl_r):
+                self._ctrl_held = False
                 return
+
+            if not self._custom_macro_recording_active:
+                return
+
+            # Don't record Ctrl+Enter release
             if key == kb.Key.enter:
-                return  # Don't record ENTER release
+                return
 
             try:
                 key_name = key.char if hasattr(key, 'char') and key.char else str(key).replace('Key.', '')
@@ -1710,80 +2306,80 @@ class QuickDupeApp:
                 key_name = str(key).replace('Key.', '')
 
             # Remove from held keys
-            self._keys_held.discard(key_name)
+            self._custom_macro_keys_held.discard(key_name)
 
-            event = {'type': 'key', 'key': key_name, 'down': False}
-            self._reconnect_recording.append(event)
-            print(f"[RECONNECT REC] key {key_name} up")
+            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000
+            event = {'type': 'key', 'key': key_name, 'down': False, 'time': timestamp}
+            self._custom_macro_recording.append(event)
+            print(f"[MACRO REC] key {key_name} up @ {timestamp:.0f}ms")
 
         mouse_listener = mouse.Listener(on_click=on_click)
         keyboard_listener = kb.Listener(on_press=on_key_press, on_release=on_key_release)
         mouse_listener.start()
         keyboard_listener.start()
 
-    def _save_reconnect_recording(self):
-        """Save the reconnect recording to file"""
-        import json
-
-        if len(self._reconnect_recording) < 2:
-            self.reconnect_status_var.set("Recording too short")
-            self.reconnect_record_btn.config(text="Record")
+    def _save_custom_macro_recording(self):
+        """Save the recording to current macro"""
+        if len(self._custom_macro_recording) < 2:
+            self.macro_status_var.set("Recording too short")
+            self.macro_record_btn.config(text="Record")
             self.show_overlay("Recording cancelled - too short", force=True)
             return
 
-        # Save to file
-        save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reconnect_macro.json")
-        with open(save_path, 'w') as f:
-            json.dump(self._reconnect_recording, f, indent=2)
+        # Save to current macro
+        macros = self.custom_macros_data.get("macros", [])
+        if 0 <= self.active_macro_index < len(macros):
+            macros[self.active_macro_index]["events"] = self._custom_macro_recording
+            save_custom_macros(self.custom_macros_data)
 
-        num_events = len(self._reconnect_recording)
-        self.reconnect_status_var.set(f"Recorded: {num_events} events")
-        self.reconnect_record_btn.config(text="Record")
+        num_events = len(self._custom_macro_recording)
+        self.macro_status_var.set(f"Recorded: {num_events} events")
+        self.macro_record_btn.config(text="Record")
         self.show_overlay(f"Saved {num_events} events", force=True)
-        print(f"[RECONNECT REC] Saved {num_events} events to {save_path}")
+        print(f"[MACRO REC] Saved {num_events} events")
 
-    def play_reconnect_macro(self):
-        """Play back the recorded reconnect macro"""
-        import json
+    def play_custom_macro(self, macro_index=None):
+        """Play back a custom macro with speed adjustment and repeat"""
+        if macro_index is None:
+            macro_index = self.active_macro_index
 
-        # Default reconnect macro
-        default_recording = [
-            {"type": "key", "key": "tab", "down": True},
-            {"type": "key", "key": "tab", "down": False},
-            {"type": "click", "x": 195, "y": 1266, "button": "left", "down": True},
-            {"type": "click", "x": 195, "y": 1266, "button": "left", "down": False},
-            {"type": "key", "key": "shift", "down": True},
-            {"type": "click", "x": 411, "y": 660, "button": "left", "down": True},
-            {"type": "click", "x": 412, "y": 660, "button": "left", "down": False},
-            {"type": "key", "key": "shift", "down": False},
-            {"type": "key", "key": "esc", "down": True},
-            {"type": "key", "key": "esc", "down": False},
-            {"type": "key", "key": "esc", "down": True},
-            {"type": "key", "key": "esc", "down": False},
-            {"type": "click", "x": 491, "y": 1304, "button": "left", "down": True},
-            {"type": "click", "x": 491, "y": 1304, "button": "left", "down": False},
-            {"type": "click", "x": 3168, "y": 69, "button": "left", "down": True},
-            {"type": "click", "x": 3169, "y": 66, "button": "left", "down": False},
-            {"type": "click", "x": 584, "y": 957, "button": "left", "down": True},
-            {"type": "click", "x": 584, "y": 957, "button": "left", "down": False},
-        ]
+        macros = self.custom_macros_data.get("macros", [])
+        if not (0 <= macro_index < len(macros)):
+            return
 
-        # Try to load custom recording, fall back to default
-        save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reconnect_macro.json")
-        if os.path.exists(save_path):
-            with open(save_path, 'r') as f:
-                recording = json.load(f)
-            if not recording:
-                recording = default_recording
-        else:
-            recording = default_recording
+        macro = macros[macro_index]
+        recording = macro.get("events", [])
+        speed = macro.get("speed", 1.0)
+        keep_timing = macro.get("keep_timing", False)
+        do_repeat = macro.get("repeat", False)
+        repeat_times = macro.get("repeat_times", 1)
+        repeat_infinite = macro.get("repeat_infinite", False)
+        repeat_delay = macro.get("repeat_delay", 0)
 
-        self.reconnect_play_btn.config(text="Playing...")
-        self.reconnect_status_var.set("Playing macro...")
+        if not recording:
+            self.show_overlay("No recording to play", force=True)
+            return
+
+        # Stop flag for infinite repeat
+        self._macro_stop = False
+
+        # ESC cancels macro
+        def on_esc():
+            if not self._macro_stop:
+                self._macro_stop = True
+                self.root.after(0, lambda: self.macro_play_btn.config(text="Play"))
+                self.root.after(0, lambda: self.macro_status_var.set("Cancelled"))
+                self.root.after(0, lambda: self.show_overlay("Macro cancelled", force=True))
+        self._macro_esc_hook = keyboard.on_press_key('esc', lambda e: on_esc(), suppress=False)
+
+        self.macro_play_btn.config(text="Stop")
+        self.macro_status_var.set("Playing macro... (ESC to cancel)")
 
         def playback():
             from pynput.mouse import Button
             from pynput.keyboard import Key
+            import math
+            import random
 
             button_map = {
                 'left': Button.left,
@@ -1791,107 +2387,153 @@ class QuickDupeApp:
                 'middle': Button.middle,
             }
 
-            def smooth_move(target_x, target_y, steps=20):
-                """Fast smooth mouse movement with random curve each time"""
-                import random
-                import math
+            special_keys = {
+                'shift': Key.shift, 'shift_l': Key.shift_l, 'shift_r': Key.shift_r,
+                'ctrl': Key.ctrl, 'ctrl_l': Key.ctrl_l, 'ctrl_r': Key.ctrl_r,
+                'alt': Key.alt, 'alt_l': Key.alt_l, 'alt_r': Key.alt_r,
+                'space': Key.space, 'enter': Key.enter, 'tab': Key.tab,
+                'backspace': Key.backspace, 'delete': Key.delete,
+                'esc': Key.esc, 'escape': Key.esc,
+                'up': Key.up, 'down': Key.down, 'left': Key.left, 'right': Key.right,
+                'home': Key.home, 'end': Key.end, 'page_up': Key.page_up, 'page_down': Key.page_down,
+                'caps_lock': Key.caps_lock, 'num_lock': Key.num_lock,
+            }
+
+            # Base delay unit - everything scales from this
+            base_delay = 0.005 / speed  # 5ms at 1x, 1ms at 5x, 50ms at 0.1x
+
+            def smooth_move(target_x, target_y):
+                """Move mouse with curve, speed controlled by slider"""
                 current = pynput_mouse.position
                 start_x, start_y = current[0], current[1]
-
-                # Random curve: perpendicular offset that varies each move
                 dx = target_x - start_x
                 dy = target_y - start_y
                 dist = math.sqrt(dx*dx + dy*dy)
-                if dist < 1:
+                if dist < 5:
+                    pynput_mouse.position = (target_x, target_y)
                     return
-
-                # Perpendicular direction (normalized)
+                # Fewer steps at high speed
+                steps = max(3, int(10 / speed))
                 perp_x = -dy / dist
                 perp_y = dx / dist
-
-                # Random curve magnitude: -15 to +15 pixels at peak, changes each time
-                curve_amount = random.uniform(-15, 15)
-
+                curve = random.uniform(-8, 8)
                 for i in range(1, steps + 1):
-                    progress = i / steps
-                    # Base position along the line
-                    base_x = start_x + dx * progress
-                    base_y = start_y + dy * progress
-
-                    # Arc offset: sine curve peaks in middle
-                    arc = math.sin(progress * math.pi) * curve_amount
-                    arc_x = perp_x * arc
-                    arc_y = perp_y * arc
-
-                    # Small jitter on top
-                    jitter_x = random.uniform(-2, 2)
-                    jitter_y = random.uniform(-2, 2)
-
-                    # Last step always hits exact target
+                    p = i / steps
+                    arc = math.sin(p * math.pi) * curve
                     if i == steps:
                         pynput_mouse.position = (target_x, target_y)
                     else:
-                        pynput_mouse.position = (int(base_x + arc_x + jitter_x), int(base_y + arc_y + jitter_y))
+                        pynput_mouse.position = (int(start_x + dx*p + perp_x*arc), int(start_y + dy*p + perp_y*arc))
+                    time.sleep(base_delay)
 
-                    time.sleep(0.003)  # 3ms per step = 60ms total
-
-            for event in recording:
-                if event['type'] == 'click':
-                    x, y = event['x'], event['y']
-                    button = button_map.get(event['button'], Button.left)
-                    smooth_move(x, y)
-                    time.sleep(0.05)  # 50ms after move
-                    if event['down']:
-                        pynput_mouse.press(button)
-                        time.sleep(0.03)  # 30ms after press
+            def smooth_drag(target_x, target_y):
+                """Drag with curve, speed controlled by slider"""
+                current = pynput_mouse.position
+                start_x, start_y = current[0], current[1]
+                dx = target_x - start_x
+                dy = target_y - start_y
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < 5:
+                    pynput_mouse.position = (target_x, target_y)
+                    return
+                steps = max(3, int(10 / speed))
+                curve = random.uniform(-6, 6)
+                perp_x = -dy / dist
+                perp_y = dx / dist
+                for i in range(1, steps + 1):
+                    p = i / steps
+                    arc = math.sin(p * math.pi) * curve
+                    if i == steps:
+                        pynput_mouse.position = (target_x, target_y)
                     else:
-                        pynput_mouse.release(button)
-                        time.sleep(0.15)  # 150ms after release - let game register
-                    print(f"[RECONNECT PLAY] {event['button']} {'down' if event['down'] else 'up'} at ({x}, {y})")
+                        pynput_mouse.position = (int(start_x + dx*p + perp_x*arc), int(start_y + dy*p + perp_y*arc))
+                    time.sleep(base_delay)
 
-                elif event['type'] == 'key':
-                    key_name = event['key']
-                    is_press = event['down']
-                    # Handle special keys (shift, ctrl, etc.)
-                    special_keys = {
-                        'shift': Key.shift, 'shift_l': Key.shift_l, 'shift_r': Key.shift_r,
-                        'ctrl': Key.ctrl, 'ctrl_l': Key.ctrl_l, 'ctrl_r': Key.ctrl_r,
-                        'alt': Key.alt, 'alt_l': Key.alt_l, 'alt_r': Key.alt_r,
-                        'space': Key.space, 'enter': Key.enter, 'tab': Key.tab,
-                        'backspace': Key.backspace, 'delete': Key.delete,
-                        'esc': Key.esc, 'escape': Key.esc,
-                        'up': Key.up, 'down': Key.down, 'left': Key.left, 'right': Key.right,
-                        'home': Key.home, 'end': Key.end, 'page_up': Key.page_up, 'page_down': Key.page_down,
-                        'caps_lock': Key.caps_lock, 'num_lock': Key.num_lock,
-                    }
-                    key_lower = key_name.lower()
-                    if key_lower in special_keys:
-                        key = special_keys[key_lower]
-                        if is_press:
-                            pynput_keyboard.press(key)
-                            time.sleep(0.03)  # 30ms after press
+            def run_once():
+                """Run the macro once"""
+                buttons_held = {}
+                playback_start = time.perf_counter()
+
+                for event in recording:
+                    if self._macro_stop:
+                        return False
+
+                    # When keep_timing is ON, wait until the right time based on recording
+                    if keep_timing and 'time' in event:
+                        event_time = event['time'] / speed  # ms, adjusted by speed
+                        elapsed = (time.perf_counter() - playback_start) * 1000
+                        wait_time = event_time - elapsed
+                        if wait_time > 0:
+                            time.sleep(wait_time / 1000.0)
+
+                    if event['type'] == 'click':
+                        x, y = event['x'], event['y']
+                        button = button_map.get(event['button'], Button.left)
+                        btn_name = event['button']
+
+                        if event['down']:
+                            smooth_move(x, y)
+                            if not keep_timing:
+                                time.sleep(base_delay * 2)  # Small pause before click
+                            pynput_mouse.press(button)
+                            buttons_held[btn_name] = (x, y)
+                            if not keep_timing:
+                                time.sleep(base_delay * 4)  # Brief hold for pickup
                         else:
-                            pynput_keyboard.release(key)
-                            # Longer delay after certain key releases
-                            if key_lower in ('tab', 'esc', 'escape'):
-                                time.sleep(0.3)  # 300ms for menu transitions
-                            elif key_lower in ('shift', 'shift_l', 'shift_r'):
-                                time.sleep(0.4)  # 400ms after shift - item transfer needs time
+                            if btn_name in buttons_held:
+                                press_pos = buttons_held[btn_name]
+                                dist = ((x - press_pos[0])**2 + (y - press_pos[1])**2) ** 0.5
+                                if dist > 50:
+                                    smooth_drag(x, y)
+                                del buttons_held[btn_name]
+                            pynput_mouse.release(button)
+
+                    elif event['type'] == 'key':
+                        key_name = event['key']
+                        is_press = event['down']
+                        key_lower = key_name.lower()
+
+                        if key_lower in special_keys:
+                            key = special_keys[key_lower]
+                            if is_press:
+                                pynput_keyboard.press(key)
                             else:
-                                time.sleep(0.1)  # 100ms after other key releases
-                    elif len(key_name) == 1:
-                        if is_press:
-                            pynput_keyboard.press(key_name)
-                            time.sleep(0.03)
-                        else:
-                            pynput_keyboard.release(key_name)
-                            time.sleep(0.1)
-                    action = "down" if is_press else "up"
-                    print(f"[RECONNECT PLAY] key {key_name} {action}")
+                                pynput_keyboard.release(key)
+                        elif len(key_name) == 1:
+                            if is_press:
+                                pynput_keyboard.press(key_name)
+                            else:
+                                pynput_keyboard.release(key_name)
+                return True
 
-            self.root.after(0, lambda: self.reconnect_play_btn.config(text="Play"))
-            self.root.after(0, lambda: self.reconnect_status_var.set("Playback complete"))
-            self.root.after(0, lambda: self.show_overlay("Macro complete", force=True))
+            # Run with repeat logic
+            if do_repeat:
+                iteration = 0
+                while True:
+                    if self._macro_stop:
+                        break
+                    iteration += 1
+                    self.root.after(0, lambda i=iteration: self.macro_status_var.set(f"Playing... #{i}"))
+                    if not run_once():
+                        break
+                    if not repeat_infinite and iteration >= repeat_times:
+                        break
+                    if repeat_delay > 0:
+                        time.sleep(repeat_delay)
+            else:
+                run_once()
+
+            # Unhook ESC listener
+            if hasattr(self, '_macro_esc_hook'):
+                try:
+                    keyboard.unhook(self._macro_esc_hook)
+                except:
+                    pass
+            self.root.after(0, lambda: self.macro_play_btn.config(text="Play"))
+            if not self._macro_stop:
+                self.root.after(0, lambda: self.macro_status_var.set("Playback complete"))
+                self.root.after(0, lambda: self.show_overlay("Macro done", force=True))
+            self._macro_stop = False
 
         threading.Thread(target=playback, daemon=True).start()
 
@@ -2061,25 +2703,6 @@ class QuickDupeApp:
 
         # Start countdown
         self._drag_countdown(10)
-
-    def start_recording_reconnect_hotkey(self):
-        """Start recording hotkey for reconnect macro"""
-        self._recording_previous_value = self.reconnect_hotkey_var.get()
-        self.recording_reconnect = True
-        self.recording_triggernade = False
-        self.recording_espam = False
-        self.recording_mine = False
-        self.recording_dc_both = False
-        self.recording_dc_outbound = False
-        self.recording_dc_inbound = False
-        self.recording_tamper = False
-        self.recording_minimize = False
-        self.recording_tray = False
-        self.recording_stop = False
-        self.reconnect_hk_btn.config(text="...")
-        self.reconnect_hotkey_var.set("Press key...")
-        self.root.bind("<KeyPress>", self.on_key_press)
-        self.root.focus_force()
 
     def _drag_countdown(self, seconds_left):
         """Countdown before starting drag recording"""
@@ -2403,7 +3026,7 @@ class QuickDupeApp:
 
     def on_key_press(self, event):
         print(f"[DEBUG] on_key_press called: key={event.keysym}, recording_stop={self.recording_stop}")
-        if not self.recording_triggernade and not self.recording_quickdrop and not self.recording_mine and not self.recording_espam and not self.recording_dc_both and not self.recording_dc_outbound and not self.recording_dc_inbound and not self.recording_tamper and not self.recording_minimize and not self.recording_tray and not self.recording_stop and not getattr(self, 'recording_reconnect', False):
+        if not self.recording_triggernade and not self.recording_quickdrop and not self.recording_mine and not self.recording_espam and not self.recording_dc_both and not self.recording_dc_outbound and not self.recording_dc_inbound and not self.recording_tamper and not self.recording_minimize and not self.recording_tray and not self.recording_stop:
             print("[DEBUG] on_key_press: early return - no recording flags set")
             return
 
@@ -2514,10 +3137,6 @@ class QuickDupeApp:
                 self.tray_hotkey_var.set("")
                 self.tray_record_btn.config(text="Set")
                 self.recording_tray = False
-            elif getattr(self, 'recording_reconnect', False):
-                self.reconnect_hotkey_var.set("")
-                self.reconnect_hk_btn.config(text="Set")
-                self.recording_reconnect = False
             self.root.unbind("<KeyPress>")
             self.root.update_idletasks()  # Force GUI refresh
             self.save_settings()
@@ -2542,7 +3161,6 @@ class QuickDupeApp:
                 self.tamper_hotkey_var,
                 self.minimize_hotkey_var,
                 self.tray_hotkey_var,
-                self.reconnect_hotkey_var,
             ]
             for var in all_hotkey_vars:
                 if var.get() == hotkey:
@@ -2592,14 +3210,191 @@ class QuickDupeApp:
                 self.tray_hotkey_var.set(hotkey)
                 self.tray_record_btn.config(text="Set")
                 self.recording_tray = False
-            elif getattr(self, 'recording_reconnect', False):
-                self.reconnect_hotkey_var.set(hotkey)
-                self.reconnect_hk_btn.config(text="Set")
-                self.recording_reconnect = False
             self.root.unbind("<KeyPress>")
             self.root.update_idletasks()  # Force GUI refresh
             self.save_settings()
             self.register_hotkeys()
+
+    # ===== APPEARANCE METHODS =====
+
+    def _update_theme_colors(self):
+        """Update ttk styles with current colors - call after changing colors"""
+        style = ttk.Style()
+        bg = self.colors['bg']
+        bg_light = self.colors['bg_light']
+        bg_lighter = self.colors.get('bg_lighter', self._adjust_color(bg, 45))
+        text = self.colors['text']
+        highlight = self.colors['highlight']
+        text_dim = self.colors.get('text_dim', '#888888')
+
+        # Base styles
+        style.configure('.', background=bg, foreground=text)
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=text)
+        style.configure('Header.TLabel', background=bg, foreground=highlight, font=('Arial', 11, 'bold'))
+        style.configure('Dim.TLabel', background=bg, foreground=text_dim)
+        style.configure('TCheckbutton', background=bg, foreground=text)
+        style.map('TCheckbutton', background=[('active', bg)])
+
+        # Buttons - use bg_light for normal, highlight for hover
+        style.configure('TButton', background=bg_light, foreground=text, borderwidth=0, relief='flat')
+        # Button hover uses darker accent
+        accent_darker = self._darken_color(highlight, 50)
+        style.map('TButton', background=[('active', accent_darker)])
+
+        # Entry fields - companion color
+        style.configure('TEntry', fieldbackground=bg_light, foreground=text, borderwidth=0, relief='flat', padding=2)
+
+        # Sliders - companion colors
+        style.configure('TScale', background=bg_lighter, troughcolor=bg_light,
+                        sliderlength=20, borderwidth=0, relief='flat',
+                        lightcolor=bg_lighter, darkcolor=bg_lighter, bordercolor=bg_lighter)
+        style.configure('Horizontal.TScale', background=bg_lighter,
+                        lightcolor=bg_lighter, darkcolor=bg_lighter, bordercolor=bg_lighter,
+                        troughcolor=bg_light)
+
+        # Scrollbar
+        style.configure('NoGrip.Vertical.TScrollbar', background=bg_light, troughcolor=bg, borderwidth=0)
+        style.map('NoGrip.Vertical.TScrollbar', background=[('active', bg_lighter), ('pressed', bg_lighter)])
+
+        # Combobox
+        style.configure('TCombobox', fieldbackground=bg_light, background=bg_light, foreground=text, arrowcolor=text)
+        style.map('TCombobox', fieldbackground=[('readonly', bg_light)],
+                  selectbackground=[('readonly', bg_lighter)], selectforeground=[('readonly', text)])
+
+        # Separator
+        style.configure('TSeparator', background=highlight)
+
+        # Update root
+        self.root.configure(bg=bg)
+
+        # Update title bar to use bg_light
+        self._update_title_bar_colors()
+
+    def _update_title_bar_colors(self):
+        """Update title bar colors to use bg_light"""
+        bg_light = self.colors['bg_light']
+        text = self.colors['text']
+        if hasattr(self, 'title_bar'):
+            self.title_bar.config(bg=bg_light)
+            for child in self.title_bar.winfo_children():
+                if isinstance(child, tk.Label):
+                    child.config(bg=bg_light, fg=text)
+
+    def _pick_bg_color(self):
+        """Open color picker for background color"""
+        from tkinter import colorchooser
+        color = colorchooser.askcolor(color=self.bg_color_var.get(), title="Choose Background Color")
+        if color[1]:
+            self._set_bg_color(color[1])
+
+    def _set_bg_color(self, color):
+        """Set the background color and derive companion colors"""
+        self.bg_color_var.set(color)
+        self.bg_color_btn.config(bg=color)
+        self.colors['bg'] = color
+        # Derive companion colors - adjust direction based on luminance
+        self.colors['bg_light'] = self._adjust_color(color, 25)  # For inputs, sliders
+        self.colors['bg_lighter'] = self._adjust_color(color, 45)  # For hover states
+        self.config['bg_color'] = color
+        self.save_settings()
+        self._update_theme_colors()
+        self._rebuild_ui_colors()
+        self._build_macro_tabs()
+
+    def _pick_fg_color(self):
+        """Open color picker for foreground/text color"""
+        from tkinter import colorchooser
+        color = colorchooser.askcolor(color=self.fg_color_var.get(), title="Choose Text Color")
+        if color[1]:
+            self._set_fg_color(color[1])
+
+    def _set_fg_color(self, color):
+        """Set the foreground/text color"""
+        self.fg_color_var.set(color)
+        self.fg_color_btn.config(bg=color)
+        self.colors['text'] = color
+        self.config['fg_color'] = color
+        self.save_settings()
+        self._update_theme_colors()
+
+    def _pick_accent_color(self):
+        """Open color picker for accent color"""
+        from tkinter import colorchooser
+        color = colorchooser.askcolor(color=self.accent_color_var.get(), title="Choose Accent Color")
+        if color[1]:
+            self._set_accent_color(color[1])
+
+    def _set_accent_color(self, color):
+        """Set the accent color and update UI"""
+        self.accent_color_var.set(color)
+        self.accent_color_btn.config(bg=color)
+        self.colors['highlight'] = color
+        self.config['accent_color'] = color
+        self.save_settings()
+        self._update_theme_colors()
+        self._build_macro_tabs()
+
+    def _get_luminance(self, hex_color):
+        """Get perceived luminance of a color (0-255)"""
+        hex_color = hex_color.lstrip('#')
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        # Perceived luminance formula
+        return 0.299 * r + 0.587 * g + 0.114 * b
+
+    def _is_dark_color(self, hex_color):
+        """Check if a color is dark (luminance < 128)"""
+        return self._get_luminance(hex_color) < 128
+
+    def _adjust_color(self, hex_color, amount):
+        """Adjust color - automatically lighter if dark bg, darker if light bg"""
+        hex_color = hex_color.lstrip('#')
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+
+        # If dark background, go lighter; if light background, go darker
+        if self._is_dark_color(hex_color):
+            r = min(255, r + amount)
+            g = min(255, g + amount)
+            b = min(255, b + amount)
+        else:
+            r = max(0, r - amount)
+            g = max(0, g - amount)
+            b = max(0, b - amount)
+        return f'#{r:02x}{g:02x}{b:02x}'
+
+    def _lighten_color(self, hex_color, amount):
+        """Lighten a hex color by amount (0-255)"""
+        hex_color = hex_color.lstrip('#')
+        r = min(255, int(hex_color[0:2], 16) + amount)
+        g = min(255, int(hex_color[2:4], 16) + amount)
+        b = min(255, int(hex_color[4:6], 16) + amount)
+        return f'#{r:02x}{g:02x}{b:02x}'
+
+    def _darken_color(self, hex_color, amount):
+        """Darken a hex color by amount (0-255)"""
+        hex_color = hex_color.lstrip('#')
+        r = max(0, int(hex_color[0:2], 16) - amount)
+        g = max(0, int(hex_color[2:4], 16) - amount)
+        b = max(0, int(hex_color[4:6], 16) - amount)
+        return f'#{r:02x}{g:02x}{b:02x}'
+
+    def _on_transparency_change(self, value):
+        """Called when transparency slider changes"""
+        trans = int(float(value))
+        self.transparency_var.set(trans)
+        self.trans_label.config(text=f"{trans}%")
+        self.config['transparency'] = trans
+        self.save_settings()
+        self._apply_transparency()
+
+    def _apply_transparency(self):
+        """Apply window transparency"""
+        trans = self.transparency_var.get() / 100.0
+        self.root.attributes('-alpha', trans)
 
     def toggle_stay_on_top(self):
         """Toggle window always-on-top setting"""
@@ -2610,9 +3405,9 @@ class QuickDupeApp:
 
     def _reset_dc_buttons(self):
         """Reset all DC buttons to default state"""
-        self.dc_both_btn.config(text="DC BOTH", bg='#3c3c3c')
-        self.dc_outbound_btn.config(text="DC OUTBOUND", bg='#3c3c3c')
-        self.dc_inbound_btn.config(text="DC INBOUND", bg='#3c3c3c')
+        self.dc_both_btn.config(text="DC BOTH", bg=self.colors['bg_light'])
+        self.dc_outbound_btn.config(text="DC OUTBOUND", bg=self.colors['bg_light'])
+        self.dc_inbound_btn.config(text="DC INBOUND", bg=self.colors['bg_light'])
 
     def toggle_dc_both(self):
         """Toggle disconnect both inbound + outbound"""
@@ -2624,7 +3419,7 @@ class QuickDupeApp:
         else:
             start_packet_drop(outbound=True, inbound=True)
             self._reset_dc_buttons()
-            self.dc_both_btn.config(text="RECONNECT", bg='#e94560')
+            self.dc_both_btn.config(text="RECONNECT", bg=self.colors['highlight'])
             self.root.after(0, lambda: self.show_overlay("DC BOTH"))
 
     def toggle_dc_outbound(self):
@@ -2637,7 +3432,7 @@ class QuickDupeApp:
         else:
             start_packet_drop(outbound=True, inbound=False)
             self._reset_dc_buttons()
-            self.dc_outbound_btn.config(text="RECONNECT", bg='#e94560')
+            self.dc_outbound_btn.config(text="RECONNECT", bg=self.colors['highlight'])
             self.root.after(0, lambda: self.show_overlay("DC OUTBOUND"))
 
     def toggle_dc_inbound(self):
@@ -2650,19 +3445,19 @@ class QuickDupeApp:
         else:
             start_packet_drop(outbound=False, inbound=True)
             self._reset_dc_buttons()
-            self.dc_inbound_btn.config(text="RECONNECT", bg='#e94560')
+            self.dc_inbound_btn.config(text="RECONNECT", bg=self.colors['highlight'])
             self.root.after(0, lambda: self.show_overlay("DC INBOUND"))
 
     def toggle_tamper(self):
         """Toggle packet tampering - corrupts packets but still sends them"""
         if self.tampering:
             stop_packet_tamper()
-            self.tamper_btn.config(text="TAMPER", bg='#3c3c3c')
+            self.tamper_btn.config(text="TAMPER", bg=self.colors['bg_light'])
             self.tampering = False
             self.root.after(0, lambda: self.show_overlay("TAMPER OFF"))
         else:
             start_packet_tamper(outbound=True, inbound=True)
-            self.tamper_btn.config(text="STOP TAMPER", bg='#ff8c00')
+            self.tamper_btn.config(text="STOP TAMPER", bg=self.colors['warning'])
             self.tampering = True
             self.root.after(0, lambda: self.show_overlay("TAMPER ON"))
 
@@ -2778,6 +3573,10 @@ class QuickDupeApp:
         self.config["quickdrop_repeat"] = self.quickdrop_repeat_var.get()
         self.config["quickdrop_rclick_pos"] = list(self.quickdrop_rclick_pos)
         self.config["quickdrop_lclick_pos"] = list(self.quickdrop_lclick_pos)
+        self.config["quickdrop_cook"] = self.quickdrop_cook_var.get()
+        self.config["quickdrop_inv_delay"] = self.quickdrop_inv_delay_var.get()
+        self.config["quickdrop_menu_delay"] = self.quickdrop_menu_delay_var.get()
+        self.config["quickdrop_drop_delay"] = self.quickdrop_drop_delay_var.get()
         self.config["espam_hotkey"] = self.espam_hotkey_var.get()
         self.config["wait_before_espam"] = self.wait_before_espam_var.get()
         self.config["espam_duration"] = self.espam_duration_var.get()
@@ -2822,10 +3621,13 @@ class QuickDupeApp:
         # Window hotkeys
         self.config["minimize_hotkey"] = self.minimize_hotkey_var.get()
         self.config["tray_hotkey"] = self.tray_hotkey_var.get()
-        # Reconnect macro hotkey
-        self.config["reconnect_hotkey"] = self.reconnect_hotkey_var.get()
         # Stop all hotkey
         self.config["stop_hotkey"] = self.stop_hotkey_var.get()
+        # Appearance settings
+        self.config["bg_color"] = self.bg_color_var.get()
+        self.config["fg_color"] = self.fg_color_var.get()
+        self.config["accent_color"] = self.accent_color_var.get()
+        self.config["transparency"] = self.transparency_var.get()
         save_config(self.config)
 
     def reset_triggernade_defaults(self):
@@ -3121,7 +3923,7 @@ class QuickDupeApp:
         self.mine_hotkey_registered = None
         self.minimize_hotkey_registered = None
         self.tray_hotkey_registered = None
-        self.reconnect_hotkey_registered = None
+        self.custom_macro_hotkeys = []
         # Alt+hotkey for re-recording positions
         self.trig_rerecord_registered = None
         self.mine_rerecord_registered = None
@@ -3213,14 +4015,19 @@ class QuickDupeApp:
             except Exception as e:
                 print(f"[HOTKEY] FAILED tray '{tray_hk}': {e}")
 
-        # Register reconnect macro hotkey
-        reconnect_hk = self.reconnect_hotkey_var.get()
-        if reconnect_hk and reconnect_hk != "Press key...":
-            try:
-                self.reconnect_hotkey_registered = keyboard.add_hotkey(reconnect_hk, self.play_reconnect_macro, suppress=False)
-                print(f"[HOTKEY] Reconnect macro registered OK: '{reconnect_hk}' -> {self.reconnect_hotkey_registered}")
-            except Exception as e:
-                print(f"[HOTKEY] FAILED reconnect '{reconnect_hk}': {e}")
+        # Register custom macro hotkeys
+        self.custom_macro_hotkeys = []
+        macros = self.custom_macros_data.get("macros", [])
+        for i, macro in enumerate(macros):
+            hk = macro.get("hotkey", "")
+            if hk and hk != "Press key...":
+                try:
+                    # Use lambda with default arg to capture current index
+                    handler = keyboard.add_hotkey(hk, lambda idx=i: self.play_custom_macro(idx), suppress=False)
+                    self.custom_macro_hotkeys.append(handler)
+                    print(f"[HOTKEY] Custom macro '{macro.get('name', f'Macro {i+1}')}' registered OK: '{hk}'")
+                except Exception as e:
+                    print(f"[HOTKEY] FAILED custom macro '{macro.get('name')}' '{hk}': {e}")
 
         # Register configurable stop all hotkey
         stop_hk = self.stop_hotkey_var.get()
@@ -3254,9 +4061,9 @@ class QuickDupeApp:
 
     def stop_all_macros(self):
         """Universal stop - triggered by configurable hotkey"""
-        # Don't interrupt reconnect macro recording
-        if getattr(self, '_reconnect_recording_active', False):
-            print("[HOTKEY] Stop All pressed but reconnect recording active - ignoring")
+        # Don't interrupt custom macro recording
+        if getattr(self, '_custom_macro_recording_active', False):
+            print("[HOTKEY] Stop All pressed but custom macro recording active - ignoring")
             return
         print("[HOTKEY] Stop All pressed - stopping all macros!")
         self.triggernade_stop = True
@@ -3542,10 +4349,13 @@ class QuickDupeApp:
         repeat = self.quickdrop_repeat_var.get()
         cycle = 0
 
-        # Get cook time from triggernade settings (same timing)
-        cook_time = self.trig_m1_hold_var.get() / 1000.0
+        # Get timing values from config
+        cook_time = self.quickdrop_cook_var.get() / 1000.0
+        inv_delay = self.quickdrop_inv_delay_var.get() / 1000.0
+        menu_delay = self.quickdrop_menu_delay_var.get() / 1000.0
+        drop_delay = self.quickdrop_drop_delay_var.get() / 1000.0
 
-        print(f"[QUICKDROP] Starting - cook={cook_time}s, repeat={repeat}")
+        print(f"[QUICKDROP] Starting - cook={cook_time}s, inv_delay={inv_delay}s, menu={menu_delay}s, drop={drop_delay}s, repeat={repeat}")
         print(f"[QUICKDROP] Positions: R:{self.quickdrop_rclick_pos} L:{self.quickdrop_lclick_pos}")
 
         try:
@@ -3573,8 +4383,8 @@ class QuickDupeApp:
                 pynput_keyboard.release(pynput.keyboard.Key.tab)
                 print("[QUICKDROP] TAB (inventory)")
 
-                # Almost no delay - super fast
-                time.sleep(0.05)
+                # Configurable inventory delay
+                time.sleep(inv_delay)
 
                 if self.quickdrop_stop:
                     break
@@ -3588,8 +4398,8 @@ class QuickDupeApp:
                 pynput_mouse.release(pynput.mouse.Button.right)
                 print(f"[QUICKDROP] Right-click at ({rx}, {ry})")
 
-                # Tiny delay for context menu
-                time.sleep(0.02)
+                # Configurable menu delay
+                time.sleep(menu_delay)
 
                 # ===== LEFT-CLICK "Drop to Ground" =====
                 lx, ly = self.quickdrop_lclick_pos
@@ -3604,14 +4414,14 @@ class QuickDupeApp:
                     break
 
                 # ===== CLOSE INVENTORY =====
-                time.sleep(0.02)
+                time.sleep(drop_delay)
                 pynput_keyboard.press(pynput.keyboard.Key.esc)
                 time.sleep(0.01)
                 pynput_keyboard.release(pynput.keyboard.Key.esc)
                 print("[QUICKDROP] ESC (close inventory)")
 
-                # No delay after closing
-                time.sleep(0.02)
+                # Small delay after closing
+                time.sleep(drop_delay)
 
                 if self.quickdrop_stop:
                     break
