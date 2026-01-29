@@ -49,7 +49,7 @@ def build():
         # Run PyInstaller
         print("[BUILD] Running PyInstaller...")
         result = subprocess.run(
-            ["pyinstaller", SPEC_FILE, "--noconfirm"],
+            [sys.executable, "-m", "PyInstaller", SPEC_FILE, "--noconfirm"],
             check=True
         )
         print(f"[BUILD] Success! Signature: {signature}")
