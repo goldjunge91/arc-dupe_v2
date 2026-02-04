@@ -11,7 +11,7 @@ a = Analysis(
     datas=[('icon.ico', '.'), ('icon.png', '.'), (pydivert_path, 'pydivert'),
            ('NONE.png', '.'), ('N.png', '.'), ('NE.png', '.'), ('E.png', '.'),
            ('SE.png', '.'), ('S.png', '.'), ('SW.png', '.')],
-    hiddenimports=['pynput', 'pynput.keyboard', 'pynput.mouse', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'pynput._util', 'pynput._util.win32', 'pydivert'],
+    hiddenimports=['pynput', 'pynput.keyboard', 'pynput.mouse', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'pynput._util', 'pynput._util.win32', 'pydivert', 'keyboard'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
