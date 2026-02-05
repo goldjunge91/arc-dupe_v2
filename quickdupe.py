@@ -4229,9 +4229,16 @@ class QuickDupeApp:
                 # Second: left-click on drop menu option
                 self.keycard_rclick_pos = self._keycard_rclick_pos
                 self.keycard_drop_pos = (x, y)
+                
+                # SOFORT SPEICHERN
                 self.config["keycard_rclick_pos"] = list(self.keycard_rclick_pos)
                 self.config["keycard_drop_pos"] = list(self.keycard_drop_pos)
                 save_config(self.config)
+                print(f"[KEYCARD] Drop menu at {x}, {y}")
+                print(f"[KEYCARD] Positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
+                print(f"[KEYCARD] Config saved to: {CONFIG_FILE}")
+                
+                # UI Update
                 self.keycard_pos_var.set(
                     f"RClick:{list(self.keycard_rclick_pos)} Drop:{list(self.keycard_drop_pos)}"
                 )
@@ -4239,10 +4246,6 @@ class QuickDupeApp:
                     0, lambda: self.keycard_pos_btn.config(text="Record Positions")
                 )
                 self.root.after(0, lambda: self.show_overlay("Recorded!", force=True))
-                print(f"[KEYCARD] Drop menu at {x}, {y}")
-                print(
-                    f"[KEYCARD] Positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}"
-                )
                 self.recording_keycard_pos = False
                 return False  # Stop listener
 
@@ -5286,9 +5289,13 @@ class QuickDupeApp:
         self.config["espam_duration"] = self.espam_duration_var.get()
         self.config["wait_before_cycle"] = self.wait_before_cycle_var.get()
         self.config["keycard_hotkey"] = self.keycard_hotkey_var.get()
+        self.config["keycard_rclick_pos"] = list(self.keycard_rclick_pos)
+        self.config["keycard_drop_pos"] = list(self.keycard_drop_pos)
         self.config["keycard_dc_wait"] = self.keycard_dc_wait_var.get()
         self.config["keycard_inv_delay"] = self.keycard_inv_delay_var.get()
+        self.config["keycard_rclick_delay"] = self.keycard_rclick_delay_var.get()
         self.config["keycard_drop_delay"] = self.keycard_drop_delay_var.get()
+        self.config["keycard_offline_espam_duration"] = self.keycard_offline_espam_duration_var.get()
         self.config["keycard_espam_duration"] = self.keycard_espam_duration_var.get()
         self.config["keycard_espam_delay"] = self.keycard_espam_delay_var.get()
         self.config["trig_dc_throws"] = self.trig_dc_throws_var.get()
@@ -5297,6 +5304,8 @@ class QuickDupeApp:
         self.config["trig_m1_hold"] = self.trig_m1_hold_var.get()
         self.config["trig_m2_hold"] = self.trig_m2_hold_var.get()
         self.config["trig_dc_delay"] = self.trig_dc_delay_var.get()
+        self.config["trig_slot_pos"] = list(self.trig_slot_pos) if self.trig_slot_pos else None
+        self.config["trig_drop_pos"] = list(self.trig_drop_pos) if self.trig_drop_pos else None
         # Wolfpack loop settings
         self.config["wolfpack_m1_hold"] = self.wolfpack_m1_hold_var.get()
         self.config["wolfpack_m1_gap"] = self.wolfpack_m1_gap_var.get()
@@ -5305,6 +5314,8 @@ class QuickDupeApp:
         # Mine settings
         self.config["mine_hotkey"] = self.mine_hotkey_var.get()
         self.config["mine_repeat"] = self.mine_repeat_var.get()
+        self.config["mine_slot_pos"] = list(self.mine_slot_pos)
+        self.config["mine_drop_pos"] = list(self.mine_drop_pos)
         self.config["mine_cook"] = self.mine_cook_var.get()
         self.config["mine_dc_delay"] = self.mine_dc_delay_var.get()
         self.config["mine_click_delay"] = self.mine_click_delay_var.get()
@@ -5361,6 +5372,11 @@ class QuickDupeApp:
         self.config["tray_hotkey"] = self.tray_hotkey_var.get()
         # Stop all hotkey
         self.config["stop_hotkey"] = self.stop_hotkey_var.get()
+        # Input Recorder (Macro) settings
+        self.config["macro_name"] = self.macro_name_var.get()
+        self.config["macro_hotkey"] = self.macro_hotkey_var.get()
+        self.config["macro_repeat_times"] = self.macro_repeat_times_var.get()
+        self.config["macro_repeat_delay"] = self.macro_repeat_delay_var.get()
         # Appearance settings
         self.config["bg_color"] = self.bg_color_var.get()
         self.config["fg_color"] = self.fg_color_var.get()
