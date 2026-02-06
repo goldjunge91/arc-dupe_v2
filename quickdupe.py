@@ -812,8 +812,8 @@ class QuickDupeApp:
                             ],
                         },
                     )
-                ],
-            )
+                ], # type: ignore
+            ) # type: ignore
         except:
             pass  # Already created
         style.configure(
@@ -2309,7 +2309,7 @@ class QuickDupeApp:
         edrop_header = ttk.Frame(frame)
         edrop_header.pack(pady=(5, 5))
         ttk.Label(
-            edrop_header, text="── E-Drop (DC→E) ──", style="Header.TLabel"
+            edrop_header, text="── Hatch v2 ──", style="Header.TLabel"
         ).pack(side="left")
         edrop_info = ttk.Label(
             edrop_header,
@@ -2320,7 +2320,7 @@ class QuickDupeApp:
         edrop_info.pack(side="left")
         self._add_tooltip(
             edrop_info,
-            "Disconnect → Wait → Press E → Inventory → Drop → Reconnect\n\nDC FIRST variant (newer, recommended).",
+            "NEW METHOD (recommended):\n\nPress E to interact with door/hatch → Immediately disconnect → Drop key from inventory → Reconnect\n\nNo E-spam needed! Works instantly.\nBest used with phone hotspot for instant disconnect.",
         )
 
         # Hotkey
@@ -2374,15 +2374,12 @@ class QuickDupeApp:
             ).pack(anchor="w", padx=20)
 
         # Timings
-        ttk.Label(frame, text="Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
+        ttk.Label(frame, text="Hatch v2 Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
         self.create_slider(
-            frame, "DC duration:", "edrop_dc_duration", 100, 50, 500, "ms"
+            frame, "E press duration:", "edrop_e_press", 10, 1, 100, "ms"
         )
         self.create_slider(
-            frame, "Wait before E:", "edrop_wait_before_e", 200, 0, 1000, "ms"
-        )
-        self.create_slider(
-            frame, "E press duration:", "edrop_e_duration", 50, 10, 200, "ms"
+            frame, "E+DC delay:", "edrop_e_dc_delay", 0, 0, 100, "ms"
         )
         self.create_slider(
             frame, "Wait before inventory:", "edrop_wait_before_inv", 100, 0, 500, "ms"
@@ -2973,7 +2970,7 @@ class QuickDupeApp:
                 new_dir = angle_to_direction(angle)
 
             if new_dir != current_dir[0]:
-                current_dir[0] = new_dir
+                current_dir[0] = new_dir # pyright: ignore[reportArgumentType, reportCallIssue]
                 img_key = new_dir if new_dir and new_dir in images else "NONE"
                 canvas.delete("radial")
                 canvas.create_image(
@@ -3523,7 +3520,7 @@ class QuickDupeApp:
             if not self._custom_macro_recording_active:
                 return
             btn_name = str(button).replace("Button.", "")
-            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000  # ms
+            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000  # pyright: ignore[reportOperatorIssue] # ms
             event = {
                 "type": "click",
                 "x": x,
@@ -3592,7 +3589,7 @@ class QuickDupeApp:
                 return
             self._custom_macro_keys_held.add(key_name)
 
-            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000
+            timestamp = (time.perf_counter() - self._macro_rec_start_time) * 1000 # pyright: ignore[reportOperatorIssue]
             event = {"type": "key", "key": key_name, "down": True, "time": timestamp}
             self._custom_macro_recording.append(event)
             print(f"[MACRO REC] key {key_name} down @ {timestamp:.0f}ms")
@@ -5336,9 +5333,7 @@ class QuickDupeApp:
         self.config["edrop_dc_mode"] = self.edrop_dc_mode_var.get()
         self.config["edrop_rclick_pos"] = list(self.edrop_rclick_pos)
         self.config["edrop_drop_pos"] = list(self.edrop_drop_pos)
-        self.config["edrop_dc_duration"] = self.edrop_dc_duration_var.get()
-        self.config["edrop_wait_before_e"] = self.edrop_wait_before_e_var.get()
-        self.config["edrop_e_duration"] = self.edrop_e_duration_var.get()
+        self.config["edrop_e_press"] = self.edrop_e_press_var.get()
         self.config["edrop_wait_before_inv"] = self.edrop_wait_before_inv_var.get()
         self.config["edrop_inv_delay"] = self.edrop_inv_delay_var.get()
         self.config["edrop_rclick_delay"] = self.edrop_rclick_delay_var.get()
@@ -5435,10 +5430,10 @@ class QuickDupeApp:
         print("[RESET] Mine dupe parameters reset to YOUR successful timings")
 
     def reset_edrop_defaults(self):
-        """Reset E-Drop (DC→E) timing parameters to defaults"""
-        self.edrop_dc_duration_var.set(100)
-        self.edrop_wait_before_e_var.set(200)
-        self.edrop_e_duration_var.set(50)
+        """Reset E-Drop (DC→E) timing parameters to defaults (NEW METHOD)"""
+        # New method: E + immediate DC, no separate DC duration or E wait
+        self.edrop_e_press_var.set(10)  # Minimal E press
+        self.config["edrop_e_dc_delay"] = 0  # Simultaneous E+DC
         self.edrop_wait_before_inv_var.set(100)
         self.edrop_inv_delay_var.set(150)
         self.edrop_rclick_delay_var.set(100)
@@ -5446,7 +5441,7 @@ class QuickDupeApp:
         self.edrop_reconnect_delay_var.set(200)
         self.edrop_loop_delay_var.set(500)
         self.save_settings()
-        print("[RESET] E-Drop (DC→E) parameters reset to defaults")
+        print("[RESET] E-Drop (DC→E) parameters reset to defaults (NEW METHOD)")
 
     def reset_edrop_efirst_defaults(self):
         """Reset E-Drop (E→DC) timing parameters to defaults"""
@@ -6833,13 +6828,13 @@ class QuickDupeApp:
                 print(f"{'='*50}")
 
                 # Read all timing values ONCE at cycle start
-                dc_wait = self.config.get("keycard_dc_wait", 100)
-                inv_delay = self.config.get("keycard_inv_delay", 300)
-                rclick_delay = self.config.get("keycard_rclick_delay", 100)
-                drop_delay = self.config.get("keycard_drop_delay", 150)
-                offline_spam_duration = self.config.get("keycard_offline_espam_duration", 2000)
-                reconnect_spam_duration = self.config.get("keycard_espam_duration", 3000)
-                spam_delay = self.config.get("keycard_espam_delay", 50)
+                dc_wait = self.config.get("keycard_dc_wait")
+                inv_delay = self.config.get("keycard_inv_delay")
+                rclick_delay = self.config.get("keycard_rclick_delay")
+                drop_delay = self.config.get("keycard_drop_delay")
+                offline_spam_duration = self.config.get("keycard_offline_espam_duration")
+                reconnect_spam_duration = self.config.get("keycard_espam_duration")
+                spam_delay = self.config.get("keycard_espam_delay")
                 rclick_x, rclick_y = self.keycard_rclick_pos
                 drop_x, drop_y = self.keycard_drop_pos
                 
@@ -6979,13 +6974,13 @@ class QuickDupeApp:
         ):  # Reuse espam lock for simplicity
             return
         try:
-            print(f"[HOTKEY] E-Drop hotkey PRESSED! running={self.edrop_running}")
+            print(f"[HOTKEY] Hatch v2 hotkey PRESSED! running={self.edrop_running}")
             if self.edrop_running:
                 print("[HOTKEY] Setting edrop_stop = True")
                 self.edrop_stop = True
                 self.root.after(0, lambda: self.edrop_status_var.set("Stopping..."))
             else:
-                print("[HOTKEY] Starting E-Drop macro")
+                print("[HOTKEY] Starting Hatch v2 macro")
                 self.edrop_stop = False
                 self.mine_stop = False
                 self.triggernade_stop = False
@@ -6995,7 +6990,7 @@ class QuickDupeApp:
                 self.root.after(
                     0, lambda: self.edrop_status_label.config(foreground="orange")
                 )
-                self.root.after(0, lambda: self.show_overlay("E-Drop started"))
+                self.root.after(0, lambda: self.show_overlay("Hatch v2 started"))
                 threading.Thread(target=self.run_edrop_macro, daemon=True).start()
         finally:
             self._espam_lock.release()
@@ -7159,13 +7154,11 @@ class QuickDupeApp:
 
 
     def run_edrop_macro(self):
-        """E-Drop Collection macro: DC → E → Inventory → Right-click → Drop → Reconnect"""
-        # Brief delay so starting hotkey doesn't trigger stop
+        """E-Drop Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""
         # Get settings
         repeat = self.edrop_repeat_var.get()
-        dc_duration = self.edrop_dc_duration_var.get()
-        wait_before_e = self.edrop_wait_before_e_var.get()
-        e_duration = self.edrop_e_duration_var.get()
+        e_press = self.edrop_e_press_var.get()  # E press duration
+        e_dc_delay = self.config.get("edrop_e_dc_delay", 0)  # Delay between E and DC (0 = simultaneous)
         wait_before_inv = self.edrop_wait_before_inv_var.get()
         inv_delay = self.edrop_inv_delay_var.get()
         rclick_delay = self.edrop_rclick_delay_var.get()
@@ -7190,48 +7183,42 @@ class QuickDupeApp:
                     0, lambda c=cycle: self.edrop_status_var.set(f"Cycle {c}")
                 )
 
-                # 1. Disconnect FIRST (use selected mode)
+                # 1. Press E to interact with door/hatch
+                pynput_keyboard.press("e")
+                self.vsleep(e_press)  # Configurable E press duration
+                pynput_keyboard.release("e")
+                print(f"[E-DROP] Pressed E (interact with door, {e_press}ms)")
+                self.root.after(0, lambda: self.show_overlay("E + DC"))
+
+                # 2. IMMEDIATELY disconnect (use selected mode) - simultaneous with E
+                self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
                 dc_mode = self.edrop_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
-                    print(f"[E-DROP] Disconnected (BOTH)")
+                    print(f"[E-DROP] Disconnected (BOTH) immediately after E")
                 elif dc_mode == "outbound":
                     start_packet_drop(outbound=True, inbound=False)
-                    print(f"[E-DROP] Disconnected (OUTBOUND only)")
+                    print(f"[E-DROP] Disconnected (OUTBOUND) immediately after E")
                 else:  # inbound
                     start_packet_drop(outbound=False, inbound=True)
-                    print(f"[E-DROP] Disconnected (INBOUND only)")
+                    print(f"[E-DROP] Disconnected (INBOUND) immediately after E")
                 is_disconnected = True
-                self.root.after(0, lambda: self.show_overlay("DC → E"))
-                
-                # Hold DC for specified duration
-                self.vsleep(dc_duration)
+
                 if self.edrop_stop:
                     break
 
-                # 2. Wait before E (must be ≤200ms for DC→E timing)
-                self.vsleep(wait_before_e)
-                if self.edrop_stop:
-                    break
-
-                # 3. Press E (interact with door/object while offline)
-                pynput_keyboard.press("e")
-                self.vsleep(e_duration)
-                pynput_keyboard.release("e")
-                print(f"[E-DROP] Pressed E after {wait_before_e}ms (interact)")
-
-                # 4. Wait before opening inventory
+                # 3. Wait before opening inventory
                 self.vsleep(wait_before_inv)
                 if self.edrop_stop:
                     break
 
-                # 5. Open inventory (TAB)
+                # 4. Open inventory (TAB)
                 pynput_keyboard.press(Key.tab)
                 self.vsleep(inv_delay)
                 pynput_keyboard.release(Key.tab)
                 print(f"[E-DROP] Inventory opened")
 
-                # 5. Right-click on item
+                # 5. Right-click on key/item
                 pynput_mouse.position = rclick_pos
                 self.vsleep(rclick_delay)
                 if self.edrop_stop:
@@ -7239,7 +7226,7 @@ class QuickDupeApp:
                 pynput_mouse.click(MouseButton.right)
                 print(f"[E-DROP] Right-clicked at {rclick_pos}")
 
-                # 6. Click drop menu
+                # 6. Click "Drop to Ground" menu option
                 self.vsleep(drop_delay)
                 if self.edrop_stop:
                     break
@@ -7255,11 +7242,11 @@ class QuickDupeApp:
                 pynput_keyboard.release(Key.tab)
                 print(f"[E-DROP] Inventory closed")
 
-                # 8. Reconnect
+                # 8. Reconnect (NO E-SPAM needed with new method!)
                 stop_packet_drop()
                 is_disconnected = False
-                print(f"[E-DROP] Reconnected")
-                self.root.after(0, lambda: self.show_overlay("Reconnected"))
+                print(f"[E-DROP] Reconnected - door should open, key should drop")
+                self.root.after(0, lambda: self.show_overlay("Reconnected ✓"))
 
                 # 9. Wait after reconnect
                 self.vsleep(reconnect_delay)
@@ -7285,7 +7272,7 @@ class QuickDupeApp:
             self.root.after(
                 0, lambda: self.edrop_status_label.config(foreground="gray")
             )
-            self.root.after(0, lambda: self.show_overlay("E-Drop stopped."))
+            self.root.after(0, lambda: self.show_overlay("Hatch v2 stopped."))
             print(f"[E-DROP] Macro finished after {cycle} cycles")
 
     def show_overlay(self, text, force=False):
