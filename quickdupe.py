@@ -15,7 +15,21 @@ from tkinter import ttk, filedialog
 import logging
 from pynput.keyboard import Controller as KeyboardController, Key
 from pynput.mouse import Button as MouseButton, Controller as MouseController
-import pydivert
+from utils.network import (
+    start_packet_drop,
+    stop_packet_drop,
+    is_dropping,
+    start_packet_tamper,
+    stop_packet_tamper,
+    is_tampering,
+)
+from utils.config import (
+    CONFIG_FILE,
+    load_config,
+    save_config,
+    load_custom_macros,
+    save_custom_macros,
+)
 
 # =============================================================================
 # OBFUSCATION FEATURES (opt-in: requires "obfuscate" file next to exe)
@@ -116,201 +130,11 @@ log = logging.getLogger("QuickDupe")
 pynput_keyboard = KeyboardController()
 pynput_mouse = MouseController()
 
-# Packet drop via WinDivert (lazy loaded to avoid network interference on startup)
-_pydivert = None  # Lazy loaded
-_handle = None
-_on = False
-
-
-def start_packet_drop(outbound=True, inbound=True):
-    """DROP PACKETS NOW"""
-    global _handle, _on, _pydivert
-    if _on:
-        return
-
-    # Lazy load pydivert only when needed
-    if _pydivert is None:
-        import pydivert
-
-        _pydivert = pydivert
-
-    # Match Clumsy's exact filter syntax
-    if outbound and inbound:
-        filt = "outbound or inbound"  # Clumsy's exact filter
-    elif outbound:
-        filt = "outbound"
-    else:
-        filt = "inbound"
-
-    try:
-        _handle = _pydivert.WinDivert(filt)
-        _handle.open()
-        _on = True
-        threading.Thread(target=_drop_loop, daemon=True).start()
-        time.sleep(0.015)  # Match Clumsy's keypress toggle delay
-    except:
-        _on = False
-        _handle = None
-
-
-def _drop_loop():
-    global _on
-    while _on:
-        try:
-            if _handle:
-                _handle.recv()  # recv but don't send = drop
-            else:
-                break
-        except:
-            break
-    _on = False
-
-
-def stop_packet_drop():
-    """STOP DROPPING NOW"""
-    global _handle, _on
-    if not _on:
-        return
-    # Close handle FIRST to unblock recv(), then set flag
-    h = _handle
-    _handle = None
-    _on = False
-    if h:
-        try:
-            h.close()
-        except:
-            pass
-    time.sleep(0.05)  # Give thread time to exit
-
-
-def is_dropping():
-    return _on
-
-
-# Tamper packet functionality
-_tamper_handle = None
-_tamper_on = False
-_tamper_patterns = [0x64, 0x13, 0x88, 0x40, 0x1F, 0xA0, 0xAA, 0x55]
-
-
-def start_packet_tamper(outbound=True, inbound=True):
-    """Start tampering packets - corrupt data but still send"""
-    global _tamper_handle, _tamper_on, _pydivert
-    if _tamper_on:
-        return
-
-    # Lazy load pydivert only when needed
-    if _pydivert is None:
-        import pydivert
-
-        _pydivert = pydivert
-
-    if outbound and inbound:
-        filt = "outbound or inbound"
-    elif outbound:
-        filt = "outbound"
-    else:
-        filt = "inbound"
-
-    try:
-        _tamper_handle = _pydivert.WinDivert(filt)
-        _tamper_handle.open()
-        _tamper_on = True
-        threading.Thread(target=_tamper_loop, daemon=True).start()
-        print(f"[TAMPER] Started tampering packets ({filt})")
-    except Exception as e:
-        print(f"[TAMPER] Failed to start: {e}")
-        _tamper_on = False
-        _tamper_handle = None
-
-
-def _tamper_loop():
-    global _tamper_on
-    while _tamper_on and _tamper_handle:
-        try:
-            packet = _tamper_handle.recv()
-            if packet and packet.payload:
-                # Tamper the payload data
-                payload = bytearray(packet.payload)
-                for i in range(len(payload)):
-                    payload[i] ^= _tamper_patterns[i % 8]
-                packet.payload = bytes(payload)
-                # pydivert auto-recalculates checksums
-            _tamper_handle.send(packet)
-        except:
-            break
-
-
-def stop_packet_tamper():
-    """Stop tampering packets"""
-    global _tamper_handle, _tamper_on
-    if not _tamper_on:
-        return
-    _tamper_on = False
-    if _tamper_handle:
-        try:
-            _tamper_handle.close()
-        except:
-            pass
-        _tamper_handle = None
-    print("[TAMPER] Stopped")
-
-
-def is_tampering():
-    return _tamper_on
-
-
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
-
-CONFIG_FILE = os.path.join(os.environ.get("APPDATA", "."), "QuickDupe", "config.json")
-
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_config(config):
-    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(config, f)
-
-# Custom macros storage (separate from main config)
-CUSTOM_MACROS_FILE = os.path.join(
-    os.environ.get("APPDATA", "."), "QuickDupe", "custom_macros.json"
-)
-
-
-def load_custom_macros():
-    """Load custom macros from JSON file"""
-    if os.path.exists(CUSTOM_MACROS_FILE):
-        try:
-            with open(CUSTOM_MACROS_FILE, "r") as f:
-                data = json.load(f)
-                # Ensure required structure
-                if "macros" not in data:
-                    data["macros"] = []
-                if "active_index" not in data:
-                    data["active_index"] = 0
-                return data
-        except:
-            pass
-    # Return default structure with one empty macro
-    return {
-        "macros": [{"name": "Macro 1", "hotkey": "", "speed": 1.0, "events": []}],
-        "active_index": 0,
-    }
-
-
-def save_custom_macros(data):
-    """Save custom macros to JSON file"""
-    os.makedirs(os.path.dirname(CUSTOM_MACROS_FILE), exist_ok=True)
-    with open(CUSTOM_MACROS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
 
 
 class QuickDupeApp:
@@ -5295,7 +5119,9 @@ class QuickDupeApp:
         self.config["trig_reconnect_after"] = self.trig_reconnect_after_var.get()
         self.config["trig_m1_hold"] = self.trig_m1_hold_var.get()
         self.config["trig_m2_hold"] = self.trig_m2_hold_var.get()
+        self.config["trig_drag_speed"] = self.trig_drag_speed_var.get()
         self.config["trig_dc_delay"] = self.trig_dc_delay_var.get()
+        self.config["trig_m1_before_interweave"] = self.trig_m1_before_interweave_var.get()
         self.config["trig_slot_pos"] = list(self.trig_slot_pos) if self.trig_slot_pos else None
         self.config["trig_drop_pos"] = list(self.trig_drop_pos) if self.trig_drop_pos else None
         # Wolfpack loop settings
@@ -5310,6 +5136,10 @@ class QuickDupeApp:
         self.config["mine_drop_pos"] = list(self.mine_drop_pos)
         self.config["mine_cook"] = self.mine_cook_var.get()
         self.config["mine_dc_delay"] = self.mine_dc_delay_var.get()
+        self.config["mine_drag_speed"] = self.mine_drag_speed_var.get()
+        self.config["mine_pre_close"] = self.mine_pre_close_var.get()
+        self.config["mine_tab_hold"] = self.mine_tab_hold_var.get()
+        self.config["mine_close_reconnect"] = self.mine_close_reconnect_var.get()
         self.config["mine_click_delay"] = self.mine_click_delay_var.get()
         self.config["mine_pickup_hold"] = self.mine_pickup_hold_var.get()
         self.config["mine_e_delay"] = self.mine_e_delay_var.get()
@@ -5329,6 +5159,7 @@ class QuickDupeApp:
         self.config["edrop_rclick_pos"] = list(self.edrop_rclick_pos)
         self.config["edrop_drop_pos"] = list(self.edrop_drop_pos)
         self.config["edrop_e_press"] = self.edrop_e_press_var.get()
+        self.config["edrop_e_dc_delay"] = self.edrop_e_dc_delay_var.get()
         self.config["edrop_wait_before_inv"] = self.edrop_wait_before_inv_var.get()
         self.config["edrop_inv_delay"] = self.edrop_inv_delay_var.get()
         self.config["edrop_rclick_delay"] = self.edrop_rclick_delay_var.get()
@@ -5373,6 +5204,106 @@ class QuickDupeApp:
         self.config["accent_color"] = self.accent_color_var.get()
         self.config["transparency"] = self.transparency_var.get()
         save_config(self.config)
+
+    def _apply_config_to_ui(self):
+        """Apply self.config values to UI variables and state"""
+        config = self.config or {}
+
+        # Generic var sync
+        for key, value in config.items():
+            var_name = f"{key}_var"
+            if hasattr(self, var_name):
+                try:
+                    getattr(self, var_name).set(value)
+                except Exception:
+                    pass
+
+        # Positions and labels
+        if config.get("quickdrop_rclick_pos") is not None:
+            self.quickdrop_rclick_pos = tuple(config["quickdrop_rclick_pos"])
+        if config.get("quickdrop_lclick_pos") is not None:
+            self.quickdrop_lclick_pos = tuple(config["quickdrop_lclick_pos"])
+        if hasattr(self, "quickdrop_pos_var"):
+            self.quickdrop_pos_var.set(
+                f"R:{list(self.quickdrop_rclick_pos)} L:{list(self.quickdrop_lclick_pos)}"
+            )
+
+        if config.get("keycard_rclick_pos") is not None:
+            self.keycard_rclick_pos = tuple(config["keycard_rclick_pos"])
+        if config.get("keycard_drop_pos") is not None:
+            self.keycard_drop_pos = tuple(config["keycard_drop_pos"])
+        if hasattr(self, "keycard_pos_var"):
+            self.keycard_pos_var.set(
+                f"RClick:{list(self.keycard_rclick_pos)} Drop:{list(self.keycard_drop_pos)}"
+            )
+
+        if config.get("edrop_rclick_pos") is not None:
+            self.edrop_rclick_pos = tuple(config["edrop_rclick_pos"])
+        if config.get("edrop_drop_pos") is not None:
+            self.edrop_drop_pos = tuple(config["edrop_drop_pos"])
+        if hasattr(self, "edrop_pos_var"):
+            self.edrop_pos_var.set(
+                f"RClick:{list(self.edrop_rclick_pos)} Drop:{list(self.edrop_drop_pos)}"
+            )
+
+        if config.get("trig_slot_pos") is not None:
+            self.trig_slot_pos = tuple(config["trig_slot_pos"])
+        if config.get("trig_drop_pos") is not None:
+            self.trig_drop_pos = tuple(config["trig_drop_pos"])
+        if self.trig_slot_pos and self.trig_drop_pos and hasattr(self, "trig_drag_var"):
+            self.trig_drag_var.set(
+                f"Slot:{list(self.trig_slot_pos)} Drop:{list(self.trig_drop_pos)}"
+            )
+
+        if config.get("mine_slot_pos") is not None:
+            self.mine_slot_pos = tuple(config["mine_slot_pos"])
+        if config.get("mine_drop_pos") is not None:
+            self.mine_drop_pos = tuple(config["mine_drop_pos"])
+        if hasattr(self, "mine_drag_var"):
+            self.mine_drag_var.set(
+                f"Slot:{list(self.mine_slot_pos)} Drop:{list(self.mine_drop_pos)}"
+            )
+
+        if config.get("mine_q_direction") and hasattr(self, "mine_q_dir_btn"):
+            self.mine_q_dir_btn.config(text=config["mine_q_direction"])
+
+        # Appearance / window state
+        bg = config.get("bg_color")
+        if bg:
+            self.bg_color_var.set(bg)
+            self.bg_color_btn.config(bg=bg)
+            self.colors["bg"] = bg
+            self.colors["bg_light"] = self._adjust_color(bg, 25)
+            self.colors["bg_lighter"] = self._adjust_color(bg, 45)
+
+        fg = config.get("fg_color")
+        if fg:
+            self.fg_color_var.set(fg)
+            self.fg_color_btn.config(bg=fg)
+            self.colors["text"] = fg
+
+        accent = config.get("accent_color")
+        if accent:
+            self.accent_color_var.set(accent)
+            self.accent_color_btn.config(bg=accent)
+            self.colors["highlight"] = accent
+
+        if bg or fg or accent:
+            self._update_theme_colors()
+            self._rebuild_ui_colors()
+            self._build_macro_tabs()
+
+        trans = config.get("transparency")
+        if trans is not None:
+            self.transparency_var.set(trans)
+            if hasattr(self, "trans_label"):
+                self.trans_label.config(text=f"{trans}%")
+            self._apply_transparency()
+
+        stay_on_top = config.get("stay_on_top")
+        if stay_on_top is not None:
+            self.stay_on_top_var.set(stay_on_top)
+            self.root.attributes("-topmost", stay_on_top)
 
     def reset_triggernade_defaults(self):
         """Reset all triggernade timing parameters to defaults (from working recording)"""
@@ -5701,8 +5632,12 @@ class QuickDupeApp:
             initialfile="all_settings.json",
         )
         if path:
+            # Ensure config is up-to-date with current UI values
+            self.save_settings()
             data = {
                 "type": "all",
+                "config": self.config,
+                "custom_macros": self.custom_macros_data,
                 "triggernade": self._get_triggernade_settings(),
                 "mine": self._get_mine_settings(),
             }
@@ -5718,6 +5653,15 @@ class QuickDupeApp:
                 data = json.load(f)
             # Handle both single-macro and all-settings files
             if data.get("type") == "all":
+                if "config" in data:
+                    self.config = data["config"]
+                    save_config(self.config)
+                    self._apply_config_to_ui()
+                if "custom_macros" in data:
+                    self.custom_macros_data = data["custom_macros"]
+                    save_custom_macros(self.custom_macros_data)
+                    self._build_macro_tabs()
+                    self._load_current_macro_to_ui()
                 if "triggernade" in data:
                     self._set_triggernade_settings(data["triggernade"])
                 if "mine" in data:
