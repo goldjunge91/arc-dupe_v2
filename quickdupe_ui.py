@@ -81,7 +81,7 @@ class QuickDupeUI:
         # Scrollbar styling - use 'alt' theme element (no grip lines)
         try:
             style.element_create("NoGrip.Scrollbar.thumb", "from", "alt")
-            style.layout(  # type: ignore
+            style.layout(
                 "NoGrip.Vertical.TScrollbar",
                 [
                     (
@@ -96,8 +96,8 @@ class QuickDupeUI:
                             ],
                         },
                     )
-                ], # pyright: ignore[reportArgumentType]
-            )
+                ], # type: ignore
+            ) # type: ignore
         except:
             pass  # Already created
         style.configure(
@@ -151,19 +151,6 @@ class QuickDupeUI:
             background=self.colors["bg"],
             foreground=self.colors["text_dim"],
         )
-
-    def build_ui(self):
-        # Custom title bar - store as instance var for color updates
-        self.title_bar = tk.Frame(self.root, bg=self.colors["bg_light"], height=32)
-        self.title_bar.pack(fill="x", side="top")
-        self.title_bar.pack_propagate(False)
-        title_bar = self.title_bar  # Local alias for convenience
-
-        # Drag functionality (define first so we can use it)
-        def start_drag(event):
-            self._drag_x = event.x
-            self._drag_y = event.y
-            
 
     def build_ui(self):
         # Custom title bar - store as instance var for color updates
@@ -1470,11 +1457,143 @@ class QuickDupeUI:
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # ===== E-DROP COLLECTION SECTION =====
+        # ===== KEY CARD GLITCH SECTION =====
+        keycard_header = ttk.Frame(frame)
+        keycard_header.pack(pady=(5, 5))
+        ttk.Label(
+            keycard_header, text="── Key Card Glitch ──", style="Header.TLabel"
+        ).pack(side="left")
+        keycard_info = ttk.Label(
+            keycard_header,
+            text=" (?)",
+            foreground=self.colors["text_dim"],
+            cursor="hand2",
+        )
+        keycard_info.pack(side="left")
+        self._add_tooltip(
+            keycard_info,
+            "1. Stand at locked door\n2. DC\n3. Drop keycard (queued while offline)\n4. Spam E (while offline)\n5. Reconnect\n6. Spam E FAST (during 2-5s reconnection delay)\n\n→ Door unlocks + keycard duplicates on ground",
+        )
+
+        keycard_hk = ttk.Frame(frame)
+        keycard_hk.pack(fill="x", padx=10, pady=5)
+        ttk.Label(keycard_hk, text="Hotkey:").pack(side="left")
+        self.keycard_hotkey_var = tk.StringVar(value=self.config.get("keycard_hotkey", ""))
+        self.keycard_hotkey_entry = tk.Entry(
+            keycard_hk,
+            textvariable=self.keycard_hotkey_var,
+            width=15,
+            state="readonly",
+            bd=0,
+            highlightthickness=0,
+            bg=self.colors["bg_light"],
+            fg=self.colors["text"],
+            readonlybackground=self.colors["bg_light"],
+        )
+        self.keycard_hotkey_entry.pack(side="left", padx=5)
+        self.keycard_record_btn = ttk.Button(
+            keycard_hk, text="Set", width=6, command=self.start_recording_keycard
+        )
+        self.keycard_record_btn.pack(side="left", padx=5)
+
+        # Key Card Position Recording (right-click + drop menu)
+        keycard_pos_frame = ttk.Frame(frame)
+        keycard_pos_frame.pack(fill="x", padx=10, pady=2)
+        self.keycard_pos_btn = ttk.Button(
+            keycard_pos_frame,
+            text="Record Positions",
+            width=16,
+            command=self.start_keycard_pos_recording,
+        )
+        self.keycard_pos_btn.pack(side="left")
+        self.keycard_pos_var = tk.StringVar()
+        # Load positions (right-click on item, then left-click on drop)
+        keycard_rclick = self.config.get("keycard_rclick_pos", [0, 0])
+        keycard_drop = self.config.get("keycard_drop_pos", [0, 0])
+        self.keycard_rclick_pos = tuple(keycard_rclick)
+        self.keycard_drop_pos = tuple(keycard_drop)
+        self.keycard_pos_var.set(f"RClick:{keycard_rclick} Drop:{keycard_drop}")
+        ttk.Label(
+            keycard_pos_frame, textvariable=self.keycard_pos_var, font=("Consolas", 8)
+        ).pack(side="left", padx=5)
+
+        # Key Card Glitch Timings
+        self.create_slider(
+            frame, "DC wait time:", "keycard_dc_wait", 100, 50, 500, "ms"
+        )
+        self.create_slider(
+            frame, "Inventory open delay:", "keycard_inv_delay", 300, 100, 1000, "ms"
+        )
+        self.create_slider(
+            frame, "Right-click delay:", "keycard_rclick_delay", 100, 50, 300, "ms"
+        )
+        self.create_slider(
+            frame, "Drop click delay:", "keycard_drop_delay", 150, 50, 500, "ms"
+        )
+        self.create_slider(
+            frame, "E-spam (offline) duration:", "keycard_offline_espam_duration", 2000, 500, 4000, "ms"
+        )
+        self.create_slider(
+            frame, "Reconnect E-spam duration:", "keycard_espam_duration", 3000, 2000, 6000, "ms"
+        )
+        self.create_slider(
+            frame, "E-spam speed (delay):", "keycard_espam_delay", 50, 30, 200, "ms"
+        )
+
+        self.keycard_status_var = tk.StringVar(value="Ready")
+        self.keycard_status_label = ttk.Label(
+            frame, textvariable=self.keycard_status_var, style="Dim.TLabel"
+        )
+        self.keycard_status_label.pack(pady=5)
+
+        ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
+
+        # ===== E-DROP POSITION RECORDING (SHARED) =====
+        edrop_shared_header = ttk.Frame(frame)
+        edrop_shared_header.pack(pady=(5, 5))
+        ttk.Label(
+            edrop_shared_header, text="── E-Drop Position (Shared) ──", style="Header.TLabel"
+        ).pack(side="left")
+        edrop_shared_info = ttk.Label(
+            edrop_shared_header,
+            text=" (?)",
+            foreground=self.colors["text_dim"],
+            cursor="hand2",
+        )
+        edrop_shared_info.pack(side="left")
+        self._add_tooltip(
+            edrop_shared_info,
+            "Record inventory positions for E-Drop.\nUsed by BOTH DC→E and E→DC variants.\n\nRight-click on item → Left-click 'Drop' option.",
+        )
+
+        # Position Recording (shared between both variants)
+        edrop_pos_frame = ttk.Frame(frame)
+        edrop_pos_frame.pack(fill="x", padx=10, pady=5)
+        self.edrop_pos_btn = ttk.Button(
+            edrop_pos_frame,
+            text="Record Positions",
+            width=16,
+            command=self.start_edrop_pos_recording,
+        )
+        self.edrop_pos_btn.pack(side="left")
+        self.edrop_pos_var = tk.StringVar()
+        # Load positions
+        edrop_rclick = self.config.get("edrop_rclick_pos", [0, 0])
+        edrop_drop = self.config.get("edrop_drop_pos", [0, 0])
+        self.edrop_rclick_pos = tuple(edrop_rclick)
+        self.edrop_drop_pos = tuple(edrop_drop)
+        self.edrop_pos_var.set(f"RClick:{edrop_rclick} Drop:{edrop_drop}")
+        ttk.Label(
+            edrop_pos_frame, textvariable=self.edrop_pos_var, font=("Consolas", 8)
+        ).pack(side="left", padx=5)
+
+        ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
+
+        # ===== E-DROP (DC→E) SECTION =====
         edrop_header = ttk.Frame(frame)
         edrop_header.pack(pady=(5, 5))
         ttk.Label(
-            edrop_header, text="── E-Drop Collection ──", style="Header.TLabel"
+            edrop_header, text="── Hatch glitch v2 ──", style="Header.TLabel"
         ).pack(side="left")
         edrop_info = ttk.Label(
             edrop_header,
@@ -1485,10 +1604,10 @@ class QuickDupeUI:
         edrop_info.pack(side="left")
         self._add_tooltip(
             edrop_info,
-            "Disconnect → Press E → Right-click item → Drop → Reconnect\n\nUseful for collecting items with disconnect protection.",
+            "NEW METHOD (recommended):\n\nPress E to interact with door/hatch → Immediately disconnect → Drop key from inventory → Reconnect\n\nNo E-spam needed! Works instantly.\nBest used with phone hotspot for instant disconnect.",
         )
 
-        # E-Drop Hotkey
+        # Hotkey
         edrop_hk = ttk.Frame(frame)
         edrop_hk.pack(fill="x", padx=10, pady=5)
         ttk.Label(edrop_hk, text="Hotkey:").pack(side="left")
@@ -1510,27 +1629,6 @@ class QuickDupeUI:
         )
         self.edrop_record_btn.pack(side="left", padx=5)
 
-        # E-Drop Position Recording
-        edrop_pos_frame = ttk.Frame(frame)
-        edrop_pos_frame.pack(fill="x", padx=10, pady=2)
-        self.edrop_pos_btn = ttk.Button(
-            edrop_pos_frame,
-            text="Record Positions",
-            width=16,
-            command=self.start_edrop_pos_recording,
-        )
-        self.edrop_pos_btn.pack(side="left")
-        self.edrop_pos_var = tk.StringVar()
-        # Load positions
-        edrop_rclick = self.config.get("edrop_rclick_pos", [0, 0])
-        edrop_drop = self.config.get("edrop_drop_pos", [0, 0])
-        self.edrop_rclick_pos = tuple(edrop_rclick)
-        self.edrop_drop_pos = tuple(edrop_drop)
-        self.edrop_pos_var.set(f"RClick:{edrop_rclick} Drop:{edrop_drop}")
-        ttk.Label(
-            edrop_pos_frame, textvariable=self.edrop_pos_var, font=("Consolas", 8)
-        ).pack(side="left", padx=5)
-
         # Repeat checkbox
         self.edrop_repeat_var = tk.BooleanVar(
             value=self.config.get("edrop_repeat", False)
@@ -1542,12 +1640,30 @@ class QuickDupeUI:
             command=self.save_settings,
         ).pack(anchor="w", padx=10, pady=5)
 
-        # E-Drop Timings
+        # DC Mode Selection
+        edrop_dc_frame = ttk.Frame(frame)
+        edrop_dc_frame.pack(fill="x", padx=10, pady=5)
+        ttk.Label(edrop_dc_frame, text="Disconnect Mode:").pack(anchor="w")
+        self.edrop_dc_mode_var = tk.StringVar(
+            value=self.config.get("edrop_dc_mode", "both")
+        )
+        dc_modes = [("Both (In+Out)", "both"), ("Outbound", "outbound"), ("Inbound", "inbound")]
+        for text, mode in dc_modes:
+            ttk.Radiobutton(
+                edrop_dc_frame,
+                text=text,
+                variable=self.edrop_dc_mode_var,
+                value=mode,
+                command=self.save_settings,
+            ).pack(anchor="w", padx=20)
+
+        # Timings
+        ttk.Label(frame, text="Hatch glitch v2 Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
         self.create_slider(
-            frame, "Wait before E:", "edrop_wait_before_e", 200, 0, 1000, "ms"
+            frame, "E press duration:", "edrop_e_press", 10, 1, 100, "ms"
         )
         self.create_slider(
-            frame, "E press duration:", "edrop_e_duration", 50, 10, 200, "ms"
+            frame, "E+DC delay:", "edrop_e_dc_delay", 0, 0, 100, "ms"
         )
         self.create_slider(
             frame, "Wait before inventory:", "edrop_wait_before_inv", 100, 0, 500, "ms"
@@ -1567,13 +1683,122 @@ class QuickDupeUI:
         self.create_slider(frame, "Loop delay:", "edrop_loop_delay", 500, 0, 2000, "ms")
 
         ttk.Button(
-            frame, text="Reset E-Drop Defaults", command=self.reset_edrop_defaults
+            frame, text="Reset Defaults", command=self.reset_edrop_defaults
         ).pack(pady=5)
+
         self.edrop_status_var = tk.StringVar(value="Ready")
         self.edrop_status_label = ttk.Label(
             frame, textvariable=self.edrop_status_var, style="Dim.TLabel"
         )
-        self.edrop_status_label.pack(pady=5)
+        self.edrop_status_label.pack(pady=2)
+
+        ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
+
+        # ===== E-DROP (E→DC) SECTION =====
+        edrop_efirst_header = ttk.Frame(frame)
+        edrop_efirst_header.pack(pady=(5, 5))
+        ttk.Label(
+            edrop_efirst_header, text="── E-Drop (E→DC) ──", style="Header.TLabel"
+        ).pack(side="left")
+        edrop_efirst_info = ttk.Label(
+            edrop_efirst_header,
+            text=" (?)",
+            foreground=self.colors["text_dim"],
+            cursor="hand2",
+        )
+        edrop_efirst_info.pack(side="left")
+        self._add_tooltip(
+            edrop_efirst_info,
+            "Press E → Wait → Disconnect → Inventory → Drop → Reconnect\n\nE FIRST variant (legacy method).",
+        )
+
+        # Hotkey
+        edrop_efirst_hk = ttk.Frame(frame)
+        edrop_efirst_hk.pack(fill="x", padx=10, pady=5)
+        ttk.Label(edrop_efirst_hk, text="Hotkey:").pack(side="left")
+        self.edrop_efirst_hotkey_var = tk.StringVar(value=self.config.get("edrop_efirst_hotkey", ""))
+        self.edrop_efirst_hotkey_entry = tk.Entry(
+            edrop_efirst_hk,
+            textvariable=self.edrop_efirst_hotkey_var,
+            width=15,
+            state="readonly",
+            bd=0,
+            highlightthickness=0,
+            bg=self.colors["bg_light"],
+            fg=self.colors["text"],
+            readonlybackground=self.colors["bg_light"],
+        )
+        self.edrop_efirst_hotkey_entry.pack(side="left", padx=5)
+        self.edrop_efirst_record_btn = ttk.Button(
+            edrop_efirst_hk, text="Set", width=6, command=self.start_recording_edrop_efirst
+        )
+        self.edrop_efirst_record_btn.pack(side="left", padx=5)
+
+        # Repeat checkbox
+        self.edrop_efirst_repeat_var = tk.BooleanVar(
+            value=self.config.get("edrop_efirst_repeat", False)
+        )
+        ttk.Checkbutton(
+            frame,
+            text="Auto (loop until pressed again)",
+            variable=self.edrop_efirst_repeat_var,
+            command=self.save_settings,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        # DC Mode Selection
+        edrop_efirst_dc_frame = ttk.Frame(frame)
+        edrop_efirst_dc_frame.pack(fill="x", padx=10, pady=5)
+        ttk.Label(edrop_efirst_dc_frame, text="Disconnect Mode:").pack(anchor="w")
+        self.edrop_efirst_dc_mode_var = tk.StringVar(
+            value=self.config.get("edrop_efirst_dc_mode", "both")
+        )
+        dc_modes = [("Both (In+Out)", "both"), ("Outbound", "outbound"), ("Inbound", "inbound")]
+        for text, mode in dc_modes:
+            ttk.Radiobutton(
+                edrop_efirst_dc_frame,
+                text=text,
+                variable=self.edrop_efirst_dc_mode_var,
+                value=mode,
+                command=self.save_settings,
+            ).pack(anchor="w", padx=20)
+
+        # Timings
+        ttk.Label(frame, text="Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
+        self.create_slider(
+            frame, "E press duration:", "edrop_efirst_e_duration", 50, 10, 200, "ms"
+        )
+        self.create_slider(
+            frame, "Wait after E:", "edrop_efirst_wait_after_e", 150, 0, 500, "ms"
+        )
+        self.create_slider(
+            frame, "DC duration:", "edrop_efirst_dc_duration", 100, 50, 500, "ms"
+        )
+        self.create_slider(
+            frame, "Wait before inventory:", "edrop_efirst_wait_before_inv", 100, 0, 500, "ms"
+        )
+        self.create_slider(
+            frame, "Inventory delay:", "edrop_efirst_inv_delay", 150, 50, 500, "ms"
+        )
+        self.create_slider(
+            frame, "Right-click delay:", "edrop_efirst_rclick_delay", 100, 20, 300, "ms"
+        )
+        self.create_slider(
+            frame, "Drop menu delay:", "edrop_efirst_drop_delay", 100, 20, 300, "ms"
+        )
+        self.create_slider(
+            frame, "Wait after reconnect:", "edrop_efirst_reconnect_delay", 200, 50, 1000, "ms"
+        )
+        self.create_slider(frame, "Loop delay:", "edrop_efirst_loop_delay", 500, 0, 2000, "ms")
+
+        ttk.Button(
+            frame, text="Reset Defaults", command=self.reset_edrop_efirst_defaults
+        ).pack(pady=5)
+
+        self.edrop_efirst_status_var = tk.StringVar(value="Ready")
+        self.edrop_efirst_status_label = ttk.Label(
+            frame, textvariable=self.edrop_efirst_status_var, style="Dim.TLabel"
+        )
+        self.edrop_efirst_status_label.pack(pady=2)
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
@@ -1882,6 +2107,46 @@ class QuickDupeUI:
 
         if unit:
             ttk.Label(row, text=unit).pack(side="left")
+
+    def _add_tooltip(self, widget, text):
+        """Add hover tooltip to a widget"""
+
+        def show_tooltip(event):
+            tooltip = tk.Toplevel(widget)
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_attributes("-topmost", True)
+            tooltip.configure(bg=self.colors["bg_light"])
+            label = tk.Label(
+                tooltip,
+                text=text,
+                justify="left",
+                bg=self.colors["bg_light"],
+                fg=self.colors["text"],
+                relief="solid",
+                borderwidth=1,
+                padx=8,
+                pady=6,
+                font=("Segoe UI", 9),
+            )
+            label.pack()
+            tooltip.update_idletasks()
+
+            # Smart positioning - flip to left if near right edge
+            tip_width = tooltip.winfo_width()
+            screen_width = tooltip.winfo_screenwidth()
+            x = event.x_root + 20
+            if x + tip_width > screen_width:
+                x = event.x_root - tip_width - 10
+            tooltip.wm_geometry(f"+{x}+{event.y_root + 20}")
+            widget._tooltip = tooltip
+
+        def hide_tooltip(event):
+            if hasattr(widget, "_tooltip") and widget._tooltip:
+                widget._tooltip.destroy()
+                widget._tooltip = None
+
+        widget.bind("<Enter>", show_tooltip)
+        widget.bind("<Leave>", hide_tooltip)
 
     def start_recording_mine(self):
         self._recording_previous_value = self.mine_hotkey_var.get()
