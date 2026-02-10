@@ -2189,6 +2189,17 @@ class QuickDupeApp:
         self.create_slider(
             frame, "Drop click delay:", "keycard_drop_delay", 150, 50, 500, "ms"
         )
+        # Delay between pressing E and issuing the disconnect (0 = simultaneous)
+        self.create_slider(
+            frame,
+            "E -> DC delay:",
+            "keycard_e_dc_delay",
+            0,
+            0,
+            500,
+            "ms",
+            tooltip="Delay between pressing E and triggering the disconnect (0 = simultaneous)",
+        )
         self.create_slider(
             frame, "E-spam (offline) duration:", "keycard_offline_espam_duration", 2000, 500, 4000, "ms"
         )
@@ -7159,13 +7170,24 @@ class QuickDupeApp:
                 
                 print(f"[{cycle}] Timings: dc_wait={dc_wait}, inv_delay={inv_delay}, rclick={rclick_delay}, drop={drop_delay}")
 
-                # ===== CORRECT KEYCARD GLITCH SEQUENCE =====
-                
-                # Step 1: User must be standing at door (can't automate position)
-                
-                # Step 2: DISCONNECT
+                # ===== KEYCARD GLITCH SEQUENCE =====
+                # Step 1: DISCONNECT
                 print(f"[{cycle}] Step 2: Disconnecting...")
-                start_packet_drop(outbound=True, inbound=True)  # Full DC
+                
+                # IMMEDIATELY disconnect (use selected mode) - simultaneous with E
+                # Use ONLY keycard-specific e->DC delay (default 0)
+                e_dc_delay = self.config.get("keycard_e_dc_delay", 0)
+                self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
+                dc_mode = self.edrop_dc_mode_var.get()
+                if dc_mode == "both":
+                    start_packet_drop(outbound=True, inbound=True)
+                    print(f"[KEYCARD] Disconnected (BOTH) immediately after E")
+                elif dc_mode == "outbound":
+                    start_packet_drop(outbound=True, inbound=False)
+                    print(f"[KEYCARD] Disconnected (OUTBOUND) immediately after E")
+                else:  # inbound
+                    start_packet_drop(outbound=False, inbound=True)
+                    print(f"[KEYCARD] Disconnected (INBOUND) immediately after E")
                 is_disconnected = True
                 self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: OFFLINE"))
                 self.vsleep(dc_wait)
@@ -7179,7 +7201,7 @@ class QuickDupeApp:
                 
                 # Open inventory (TAB)
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(50)
+                self.vsleep(inv_delay)
                 pynput_keyboard.release(Key.tab)
                 self.vsleep(inv_delay)
 
@@ -7473,7 +7495,6 @@ class QuickDupeApp:
             )
             self.root.after(0, lambda: self.show_overlay("E-Drop (E→DC) stopped."))
             print(f"[E-DROP-EFIRST] Macro finished after {cycle} cycles")
-
 
     def run_edrop_macro(self):
         """E-Drop Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""

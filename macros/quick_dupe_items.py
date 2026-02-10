@@ -153,18 +153,18 @@ def run_quick_dupe_items(
     if _stop():
         return
 
-    # 9) Spam left mouse button
-    log(f"[QD-ITEMS] spam_max_clicks raw={spam_max_raw} parsed={spam_max_clicks}")
-    clicks_done = 0
-    for _ in range(spam_max_clicks):
-        if _stop():
-            break
-        mouse.press(MouseButton.left)
-        vsleep(spam_delay)
-        mouse.release(MouseButton.left)
-        vsleep(spam_delay)
-        clicks_done += 1
+    # # 9) Spam left mouse button
+    # log(f"[QD-ITEMS] spam_max_clicks raw={spam_max_raw} parsed={spam_max_clicks}")
+    # clicks_done = 0
+    # for _ in range(spam_max_clicks):
+    #     if _stop():
+    #         break
+    #     mouse.press(MouseButton.left)
+    #     vsleep(spam_delay)
+    #     mouse.release(MouseButton.left)
+    #     vsleep(spam_delay)
+    #     clicks_done += 1
 
-    log(f"[QD-ITEMS] Spam clicks: {clicks_done}/{spam_max_clicks}")
+    # log(f"[QD-ITEMS] Spam clicks: {clicks_done}/{spam_max_clicks}")
 
     log("[QD-ITEMS] Done")
