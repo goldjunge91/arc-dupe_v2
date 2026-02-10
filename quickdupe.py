@@ -266,15 +266,15 @@ class QuickDupeApp:
         self.espam_stop = False
         self.espam_hotkey_registered = None
         self.escape_hotkey_registered = None
-        # E-Drop Collection state
-        self.edrop_running = False
-        self.edrop_stop = False
-        self.edrop_hotkey_registered = None
-        self.recording_edrop = False
-        # E-Drop E-First variant state
-        self.edrop_efirst_running = False
-        self.edrop_efirst_hotkey_registered = None
-        self.recording_edrop_efirst = False
+        # Hatch glitch (E-Drop / E→DC) Collection state
+        self.hatch_glitch_running = False
+        self.hatch_glitch_stop = False
+        self.hatch_glitch_hotkey_registered = None
+        self.recording_hatch_glitch = False
+        # Hatch glitch E-First variant state
+        self.hatch_glitch_efirst_running = False
+        self.hatch_glitch_efirst_hotkey_registered = None
+        self.recording_hatch_glitch_efirst = False
         # Key Card Glitch state
         self.keycard_running = False
         self.keycard_stop = False
@@ -2256,73 +2256,73 @@ class QuickDupeApp:
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # ===== E-DROP POSITION RECORDING (SHARED) =====
-        edrop_shared_header = ttk.Frame(frame)
-        edrop_shared_header.pack(pady=(5, 5))
+        # ===== Hatch glitch position recording (shared) =====
+        hatch_glitch_shared_header = ttk.Frame(frame)
+        hatch_glitch_shared_header.pack(pady=(5, 5))
         ttk.Label(
-            edrop_shared_header, text="── E-Drop Position (Shared) ──", style="Header.TLabel"
+            hatch_glitch_shared_header, text="── Hatch glitch v2 Position (Shared) ──", style="Header.TLabel"
         ).pack(side="left")
-        edrop_shared_info = ttk.Label(
-            edrop_shared_header,
+        hatch_glitch_shared_info = ttk.Label(
+            hatch_glitch_shared_header,
             text=" (?)",
             foreground=self.colors["text_dim"],
             cursor="hand2",
         )
-        edrop_shared_info.pack(side="left")
+        hatch_glitch_shared_info.pack(side="left")
         self._add_tooltip(
-            edrop_shared_info,
-            "Record inventory positions for E-Drop.\nUsed by BOTH DC→E and E→DC variants.\n\nRight-click on item → Left-click 'Drop' option.",
+            hatch_glitch_shared_info,
+            "Record inventory positions for Hatch glitch v2.\nUsed by BOTH DC→E and E→DC variants.\n\nRight-click on item → Left-click 'Drop' option.",
         )
 
         # Position Recording (shared between both variants)
-        edrop_pos_frame = ttk.Frame(frame)
-        edrop_pos_frame.pack(fill="x", padx=10, pady=5)
-        self.edrop_pos_btn = ttk.Button(
-            edrop_pos_frame,
+        hatch_glitch_pos_frame = ttk.Frame(frame)
+        hatch_glitch_pos_frame.pack(fill="x", padx=10, pady=5)
+        self.hatch_glitch_pos_btn = ttk.Button(
+            hatch_glitch_pos_frame,
             text="Record Positions",
             width=16,
-            command=self.start_edrop_pos_recording,
+            command=self.start_hatch_glitch_pos_recording,
         )
-        self.edrop_pos_btn.pack(side="left")
-        self.edrop_pos_var = tk.StringVar()
+        self.hatch_glitch_pos_btn.pack(side="left")
+        self.hatch_glitch_pos_var = tk.StringVar()
         # Load positions
-        edrop_rclick = self.config.get("edrop_rclick_pos", [0, 0])
-        edrop_drop = self.config.get("edrop_drop_pos", [0, 0])
-        self.edrop_rclick_pos = tuple(edrop_rclick)
-        self.edrop_drop_pos = tuple(edrop_drop)
-        self.edrop_pos_var.set(f"RClick:{edrop_rclick} Drop:{edrop_drop}")
+        hatch_glitch_rclick = self.config.get("hatch_glitch_rclick_pos", [0, 0])
+        hatch_glitch_drop = self.config.get("hatch_glitch_drop_pos", [0, 0])
+        self.hatch_glitch_rclick_pos = tuple(hatch_glitch_rclick)
+        self.hatch_glitch_drop_pos = tuple(hatch_glitch_drop)
+        self.hatch_glitch_pos_var.set(f"RClick:{hatch_glitch_rclick} Drop:{hatch_glitch_drop}")
         ttk.Label(
-            edrop_pos_frame, textvariable=self.edrop_pos_var, font=("Consolas", 8)
+            hatch_glitch_pos_frame, textvariable=self.hatch_glitch_pos_var, font=("Consolas", 8)
         ).pack(side="left", padx=5)
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # E-DROP (DC→E)
-        edrop_header = ttk.Frame(frame)
-        edrop_header.pack(pady=(5, 5))
+        # Hatch glitch v2 (DC→E)
+        hatch_glitch_header = ttk.Frame(frame)
+        hatch_glitch_header.pack(pady=(5, 5))
         ttk.Label(
-            edrop_header, text="── Hatch glitch v2 ──", style="Header.TLabel"
+            hatch_glitch_header, text="── Hatch glitch v2 ──", style="Header.TLabel"
         ).pack(side="left")
-        edrop_info = ttk.Label(
-            edrop_header,
+        hatch_glitch_info = ttk.Label(
+            hatch_glitch_header,
             text=" (?)",
             foreground=self.colors["text_dim"],
             cursor="hand2",
         )
-        edrop_info.pack(side="left")
+        hatch_glitch_info.pack(side="left")
         self._add_tooltip(
-            edrop_info,
+            hatch_glitch_info,
             "NEW METHOD (recommended):\n\nPress E to interact with door/hatch → Immediately disconnect → Drop key from inventory → Reconnect\n\nNo E-spam needed! Works instantly.\nBest used with phone hotspot for instant disconnect.",
         )
 
         # Hotkey
-        edrop_hk = ttk.Frame(frame)
-        edrop_hk.pack(fill="x", padx=10, pady=5)
-        ttk.Label(edrop_hk, text="Hotkey:").pack(side="left")
-        self.edrop_hotkey_var = tk.StringVar(value=self.config.get("edrop_hotkey", ""))
-        self.edrop_hotkey_entry = tk.Entry(
-            edrop_hk,
-            textvariable=self.edrop_hotkey_var,
+        hatch_glitch_hk = ttk.Frame(frame)
+        hatch_glitch_hk.pack(fill="x", padx=10, pady=5)
+        ttk.Label(hatch_glitch_hk, text="Hotkey:").pack(side="left")
+        self.hatch_glitch_hotkey_var = tk.StringVar(value=self.config.get("hatch_glitch_hotkey", ""))
+        self.hatch_glitch_hotkey_entry = tk.Entry(
+            hatch_glitch_hk,
+            textvariable=self.hatch_glitch_hotkey_var,
             width=15,
             state="readonly",
             bd=0,
@@ -2331,36 +2331,36 @@ class QuickDupeApp:
             fg=self.colors["text"],
             readonlybackground=self.colors["bg_light"],
         )
-        self.edrop_hotkey_entry.pack(side="left", padx=5)
-        self.edrop_record_btn = ttk.Button(
-            edrop_hk, text="Set", width=6, command=self.start_recording_edrop
+        self.hatch_glitch_hotkey_entry.pack(side="left", padx=5)
+        self.hatch_glitch_record_btn = ttk.Button(
+            hatch_glitch_hk, text="Set", width=6, command=self.start_recording_hatch_glitch
         )
-        self.edrop_record_btn.pack(side="left", padx=5)
+        self.hatch_glitch_record_btn.pack(side="left", padx=5)
 
         # Repeat checkbox
-        self.edrop_repeat_var = tk.BooleanVar(
-            value=self.config.get("edrop_repeat", False)
+        self.hatch_glitch_repeat_var = tk.BooleanVar(
+            value=self.config.get("hatch_glitch_repeat", False)
         )
         ttk.Checkbutton(
             frame,
             text="Auto (loop until pressed again)",
-            variable=self.edrop_repeat_var,
+            variable=self.hatch_glitch_repeat_var,
             command=self.save_settings,
         ).pack(anchor="w", padx=10, pady=5)
 
         # DC Mode Selection
-        edrop_dc_frame = ttk.Frame(frame)
-        edrop_dc_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Label(edrop_dc_frame, text="Disconnect Mode:").pack(anchor="w")
-        self.edrop_dc_mode_var = tk.StringVar(
-            value=self.config.get("edrop_dc_mode", "both")
+        hatch_glitch_dc_frame = ttk.Frame(frame)
+        hatch_glitch_dc_frame.pack(fill="x", padx=10, pady=5)
+        ttk.Label(hatch_glitch_dc_frame, text="Disconnect Mode:").pack(anchor="w")
+        self.hatch_glitch_dc_mode_var = tk.StringVar(
+            value=self.config.get("hatch_glitch_dc_mode", "both")
         )
         dc_modes = [("Both (In+Out)", "both"), ("Outbound", "outbound"), ("Inbound", "inbound")]
         for text, mode in dc_modes:
             ttk.Radiobutton(
-                edrop_dc_frame,
+                hatch_glitch_dc_frame,
                 text=text,
-                variable=self.edrop_dc_mode_var,
+                variable=self.hatch_glitch_dc_mode_var,
                 value=mode,
                 command=self.save_settings,
             ).pack(anchor="w", padx=20)
@@ -2368,66 +2368,66 @@ class QuickDupeApp:
         # Timings
         ttk.Label(frame, text="Hatch glitch v2 Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
         self.create_slider(
-            frame, "E press duration:", "edrop_e_press", 10, 1, 100, "ms"
+            frame, "E press duration:", "hatch_glitch_e_press", 10, 1, 100, "ms"
         )
         self.create_slider(
-            frame, "E+DC delay:", "edrop_e_dc_delay", 0, 0, 100, "ms"
+            frame, "E+DC delay:", "hatch_glitch_e_dc_delay", 0, 0, 100, "ms"
         )
         self.create_slider(
-            frame, "Wait before inventory:", "edrop_wait_before_inv", 100, 0, 500, "ms"
+            frame, "Wait before inventory:", "hatch_glitch_wait_before_inv", 100, 0, 500, "ms"
         )
         self.create_slider(
-            frame, "Inventory delay:", "edrop_inv_delay", 150, 50, 500, "ms"
+            frame, "Inventory delay:", "hatch_glitch_inv_delay", 150, 50, 500, "ms"
         )
         self.create_slider(
-            frame, "Right-click delay:", "edrop_rclick_delay", 100, 20, 300, "ms"
+            frame, "Right-click delay:", "hatch_glitch_rclick_delay", 100, 20, 300, "ms"
         )
         self.create_slider(
-            frame, "Drop menu delay:", "edrop_drop_delay", 100, 20, 300, "ms"
+            frame, "Drop menu delay:", "hatch_glitch_drop_delay", 100, 20, 300, "ms"
         )
         self.create_slider(
-            frame, "Wait after reconnect:", "edrop_reconnect_delay", 200, 50, 1000, "ms"
+            frame, "Wait after reconnect:", "hatch_glitch_reconnect_delay", 200, 50, 1000, "ms"
         )
-        self.create_slider(frame, "Loop delay:", "edrop_loop_delay", 500, 0, 2000, "ms")
+        self.create_slider(frame, "Loop delay:", "hatch_glitch_loop_delay", 500, 0, 2000, "ms")
 
         ttk.Button(
-            frame, text="Reset Defaults", command=self.reset_edrop_defaults
+            frame, text="Reset Defaults", command=self.reset_hatch_glitch_defaults
         ).pack(pady=5)
 
-        self.edrop_status_var = tk.StringVar(value="Ready")
-        self.edrop_status_label = ttk.Label(
-            frame, textvariable=self.edrop_status_var, style="Dim.TLabel"
+        self.hatch_glitch_status_var = tk.StringVar(value="Ready")
+        self.hatch_glitch_status_label = ttk.Label(
+            frame, textvariable=self.hatch_glitch_status_var, style="Dim.TLabel"
         )
-        self.edrop_status_label.pack(pady=2)
+        self.hatch_glitch_status_label.pack(pady=2)
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # E-DROP (E→DC)
-        edrop_efirst_header = ttk.Frame(frame)
-        edrop_efirst_header.pack(pady=(5, 5))
+        # Hatch glitch (E→DC)
+        hatch_glitch_efirst_header = ttk.Frame(frame)
+        hatch_glitch_efirst_header.pack(pady=(5, 5))
         ttk.Label(
-            edrop_efirst_header, text="── E-Drop (E→DC) ──", style="Header.TLabel"
+            hatch_glitch_efirst_header, text="── Hatch glitch (E→DC) ──", style="Header.TLabel"
         ).pack(side="left")
-        edrop_efirst_info = ttk.Label(
-            edrop_efirst_header,
+        hatch_glitch_efirst_info = ttk.Label(
+            hatch_glitch_efirst_header,
             text=" (?)",
             foreground=self.colors["text_dim"],
             cursor="hand2",
         )
-        edrop_efirst_info.pack(side="left")
+        hatch_glitch_efirst_info.pack(side="left")
         self._add_tooltip(
-            edrop_efirst_info,
+            hatch_glitch_efirst_info,
             "Press E → Wait → Disconnect → Inventory → Drop → Reconnect\n\nE FIRST variant (legacy method).",
         )
 
         # Hotkey
-        edrop_efirst_hk = ttk.Frame(frame)
-        edrop_efirst_hk.pack(fill="x", padx=10, pady=5)
-        ttk.Label(edrop_efirst_hk, text="Hotkey:").pack(side="left")
-        self.edrop_efirst_hotkey_var = tk.StringVar(value=self.config.get("edrop_efirst_hotkey", ""))
-        self.edrop_efirst_hotkey_entry = tk.Entry(
-            edrop_efirst_hk,
-            textvariable=self.edrop_efirst_hotkey_var,
+        hatch_glitch_efirst_hk = ttk.Frame(frame)
+        hatch_glitch_efirst_hk.pack(fill="x", padx=10, pady=5)
+        ttk.Label(hatch_glitch_efirst_hk, text="Hotkey:").pack(side="left")
+        self.hatch_glitch_efirst_hotkey_var = tk.StringVar(value=self.config.get("hatch_glitch_efirst_hotkey", ""))
+        self.hatch_glitch_efirst_hotkey_entry = tk.Entry(
+            hatch_glitch_efirst_hk,
+            textvariable=self.hatch_glitch_efirst_hotkey_var,
             width=15,
             state="readonly",
             bd=0,
@@ -2436,36 +2436,36 @@ class QuickDupeApp:
             fg=self.colors["text"],
             readonlybackground=self.colors["bg_light"],
         )
-        self.edrop_efirst_hotkey_entry.pack(side="left", padx=5)
-        self.edrop_efirst_record_btn = ttk.Button(
-            edrop_efirst_hk, text="Set", width=6, command=self.start_recording_edrop_efirst
+        self.hatch_glitch_efirst_hotkey_entry.pack(side="left", padx=5)
+        self.hatch_glitch_efirst_record_btn = ttk.Button(
+            hatch_glitch_efirst_hk, text="Set", width=6, command=self.start_recording_hatch_glitch_efirst
         )
-        self.edrop_efirst_record_btn.pack(side="left", padx=5)
+        self.hatch_glitch_efirst_record_btn.pack(side="left", padx=5)
 
         # Repeat checkbox
-        self.edrop_efirst_repeat_var = tk.BooleanVar(
-            value=self.config.get("edrop_efirst_repeat", False)
+        self.hatch_glitch_efirst_repeat_var = tk.BooleanVar(
+            value=self.config.get("hatch_glitch_efirst_repeat", False)
         )
         ttk.Checkbutton(
             frame,
             text="Auto (loop until pressed again)",
-            variable=self.edrop_efirst_repeat_var,
+            variable=self.hatch_glitch_efirst_repeat_var,
             command=self.save_settings,
         ).pack(anchor="w", padx=10, pady=5)
 
         # DC Mode Selection
-        edrop_efirst_dc_frame = ttk.Frame(frame)
-        edrop_efirst_dc_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Label(edrop_efirst_dc_frame, text="Disconnect Mode:").pack(anchor="w")
-        self.edrop_efirst_dc_mode_var = tk.StringVar(
-            value=self.config.get("edrop_efirst_dc_mode", "both")
+        hatch_glitch_efirst_dc_frame = ttk.Frame(frame)
+        hatch_glitch_efirst_dc_frame.pack(fill="x", padx=10, pady=5)
+        ttk.Label(hatch_glitch_efirst_dc_frame, text="Disconnect Mode:").pack(anchor="w")
+        self.hatch_glitch_efirst_dc_mode_var = tk.StringVar(
+            value=self.config.get("hatch_glitch_efirst_dc_mode", "both")
         )
         dc_modes = [("Both (In+Out)", "both"), ("Outbound", "outbound"), ("Inbound", "inbound")]
         for text, mode in dc_modes:
             ttk.Radiobutton(
-                edrop_efirst_dc_frame,
+                hatch_glitch_efirst_dc_frame,
                 text=text,
-                variable=self.edrop_efirst_dc_mode_var,
+                variable=self.hatch_glitch_efirst_dc_mode_var,
                 value=mode,
                 command=self.save_settings,
             ).pack(anchor="w", padx=20)
@@ -2473,40 +2473,40 @@ class QuickDupeApp:
         # Timings
         ttk.Label(frame, text="Timings:", font=("Arial", 9, "bold")).pack(anchor="w", padx=10, pady=(5, 2))
         self.create_slider(
-            frame, "E press duration:", "edrop_efirst_e_duration", 50, 10, 200, "ms"
+            frame, "E press duration:", "hatch_glitch_efirst_e_duration", 50, 10, 200, "ms"
         )
         self.create_slider(
-            frame, "Wait after E:", "edrop_efirst_wait_after_e", 150, 0, 500, "ms"
+            frame, "Wait after E:", "hatch_glitch_efirst_wait_after_e", 150, 0, 500, "ms"
         )
         self.create_slider(
-            frame, "DC duration:", "edrop_efirst_dc_duration", 100, 50, 500, "ms"
+            frame, "DC duration:", "hatch_glitch_efirst_dc_duration", 100, 50, 500, "ms"
         )
         self.create_slider(
-            frame, "Wait before inventory:", "edrop_efirst_wait_before_inv", 100, 0, 500, "ms"
+            frame, "Wait before inventory:", "hatch_glitch_efirst_wait_before_inv", 100, 0, 500, "ms"
         )
         self.create_slider(
-            frame, "Inventory delay:", "edrop_efirst_inv_delay", 150, 50, 500, "ms"
+            frame, "Inventory delay:", "hatch_glitch_efirst_inv_delay", 150, 50, 500, "ms"
         )
         self.create_slider(
-            frame, "Right-click delay:", "edrop_efirst_rclick_delay", 100, 20, 300, "ms"
+            frame, "Right-click delay:", "hatch_glitch_efirst_rclick_delay", 100, 20, 300, "ms"
         )
         self.create_slider(
-            frame, "Drop menu delay:", "edrop_efirst_drop_delay", 100, 20, 300, "ms"
+            frame, "Drop menu delay:", "hatch_glitch_efirst_drop_delay", 100, 20, 300, "ms"
         )
         self.create_slider(
-            frame, "Wait after reconnect:", "edrop_efirst_reconnect_delay", 200, 50, 1000, "ms"
+            frame, "Wait after reconnect:", "hatch_glitch_efirst_reconnect_delay", 200, 50, 1000, "ms"
         )
-        self.create_slider(frame, "Loop delay:", "edrop_efirst_loop_delay", 500, 0, 2000, "ms")
+        self.create_slider(frame, "Loop delay:", "hatch_glitch_efirst_loop_delay", 500, 0, 2000, "ms")
 
         ttk.Button(
-            frame, text="Reset Defaults", command=self.reset_edrop_efirst_defaults
+            frame, text="Reset Defaults", command=self.reset_hatch_glitch_efirst_defaults
         ).pack(pady=5)
 
-        self.edrop_efirst_status_var = tk.StringVar(value="Ready")
-        self.edrop_efirst_status_label = ttk.Label(
-            frame, textvariable=self.edrop_efirst_status_var, style="Dim.TLabel"
+        self.hatch_glitch_efirst_status_var = tk.StringVar(value="Ready")
+        self.hatch_glitch_efirst_status_label = ttk.Label(
+            frame, textvariable=self.hatch_glitch_efirst_status_var, style="Dim.TLabel"
         )
-        self.edrop_efirst_status_label.pack(pady=2)
+        self.hatch_glitch_efirst_status_label.pack(pady=2)
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
@@ -3961,7 +3961,7 @@ class QuickDupeApp:
         self.recording_triggernade = False
         self.recording_mine = False
         self.recording_quick_items = False
-        self.recording_edrop = False
+        self.recording_hatch_glitch = False
         self.recording_dc_both = False
         self.recording_dc_outbound = False
         self.recording_dc_inbound = False
@@ -3976,8 +3976,8 @@ class QuickDupeApp:
     def start_recording_keycard(self):
         self._recording_previous_value = self.keycard_hotkey_var.get()
         self.recording_keycard = True
-        self.recording_edrop = False
-        self.recording_edrop_efirst = False
+        self.recording_hatch_glitch = False
+        self.recording_hatch_glitch_efirst = False
         self.recording_espam = False
         self.recording_triggernade = False
         self.recording_quickdrop = False
@@ -3994,10 +3994,10 @@ class QuickDupeApp:
         self.root.bind("<KeyPress>", self.on_key_press)
         self.root.focus_force()
 
-    def start_recording_edrop(self):
-        self._recording_previous_value = self.edrop_hotkey_var.get()
-        self.recording_edrop = True
-        self.recording_edrop_efirst = False
+    def start_recording_hatch_glitch(self):
+        self._recording_previous_value = self.hatch_glitch_hotkey_var.get()
+        self.recording_hatch_glitch = True
+        self.recording_hatch_glitch_efirst = False
         self.recording_espam = False
         self.recording_triggernade = False
         self.recording_quickdrop = False
@@ -4009,15 +4009,15 @@ class QuickDupeApp:
         self.recording_tamper = False
         self.recording_minimize = False
         self.recording_tray = False
-        self.edrop_record_btn.config(text="...")
-        self.edrop_hotkey_var.set("Press key...")
+        self.hatch_glitch_record_btn.config(text="...")
+        self.hatch_glitch_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
         self.root.focus_force()
 
-    def start_recording_edrop_efirst(self):
-        self._recording_previous_value = self.edrop_efirst_hotkey_var.get()
-        self.recording_edrop_efirst = True
-        self.recording_edrop = False
+    def start_recording_hatch_glitch_efirst(self):
+        self._recording_previous_value = self.hatch_glitch_efirst_hotkey_var.get()
+        self.recording_hatch_glitch_efirst = True
+        self.recording_hatch_glitch = False
         self.recording_espam = False
         self.recording_triggernade = False
         self.recording_quickdrop = False
@@ -4029,8 +4029,8 @@ class QuickDupeApp:
         self.recording_tamper = False
         self.recording_minimize = False
         self.recording_tray = False
-        self.edrop_efirst_record_btn.config(text="...")
-        self.edrop_efirst_hotkey_var.set("Press key...")
+        self.hatch_glitch_efirst_record_btn.config(text="...")
+        self.hatch_glitch_efirst_hotkey_var.set("Press key...")
         self.root.bind("<KeyPress>", self.on_key_press)
         self.root.focus_force()
 
@@ -4078,8 +4078,8 @@ class QuickDupeApp:
         self.recording_espam = False
         self.recording_mine = False
         self.recording_keycard = False
-        self.recording_edrop = False
-        self.recording_edrop_efirst = False
+        self.recording_hatch_glitch = False
+        self.recording_hatch_glitch_efirst = False
         self.recording_dc_both = False
         self.recording_dc_outbound = False
         self.recording_dc_inbound = False
@@ -4200,47 +4200,47 @@ class QuickDupeApp:
             "esc", lambda e: on_esc(), suppress=False
         )
 
-    def start_edrop_pos_recording(self):
-        """Record E-Drop positions - right-click on item, then left-click on drop menu"""
+    def start_hatch_glitch_pos_recording(self):
+        """Record Hatch glitch v2 positions - right-click on item, then left-click on drop menu"""
         from pynput import mouse
 
-        self.edrop_pos_btn.config(text="Right-click...")
+        self.hatch_glitch_pos_btn.config(text="Right-click...")
         self.show_overlay("RIGHT-CLICK on item in inventory", force=True)
-        self._edrop_rclick_pos = None
+        self._hatch_glitch_rclick_pos = None
 
         def on_click(x, y, button, pressed):
             if not pressed:
                 return  # Only care about press, not release
 
-            if button == mouse.Button.right and self._edrop_rclick_pos is None:
+            if button == mouse.Button.right and self._hatch_glitch_rclick_pos is None:
                 # First: right-click position on item
-                self._edrop_rclick_pos = (x, y)
+                self._hatch_glitch_rclick_pos = (x, y)
                 self.root.after(
-                    0, lambda: self.edrop_pos_btn.config(text="Left-click...")
+                    0, lambda: self.hatch_glitch_pos_btn.config(text="Left-click...")
                 )
                 self.root.after(
                     0,
                     lambda: self.show_overlay("LEFT-CLICK 'Drop' in menu", force=True),
                 )
-                print(f"[E-DROP] Right-click at {x}, {y}")
+                print(f"[HATCH-GLITCH] Right-click at {x}, {y}")
 
-            elif button == mouse.Button.left and self._edrop_rclick_pos is not None:
+            elif button == mouse.Button.left and self._hatch_glitch_rclick_pos is not None:
                 # Second: left-click on drop menu option
-                self.edrop_rclick_pos = self._edrop_rclick_pos
-                self.edrop_drop_pos = (x, y)
-                self.config["edrop_rclick_pos"] = list(self.edrop_rclick_pos)
-                self.config["edrop_drop_pos"] = list(self.edrop_drop_pos)
+                self.hatch_glitch_rclick_pos = self._hatch_glitch_rclick_pos
+                self.hatch_glitch_drop_pos = (x, y)
+                self.config["hatch_glitch_rclick_pos"] = list(self.hatch_glitch_rclick_pos)
+                self.config["hatch_glitch_drop_pos"] = list(self.hatch_glitch_drop_pos)
                 save_config(self.config)
-                self.edrop_pos_var.set(
-                    f"RClick:{list(self.edrop_rclick_pos)} Drop:{list(self.edrop_drop_pos)}"
+                self.hatch_glitch_pos_var.set(
+                    f"RClick:{list(self.hatch_glitch_rclick_pos)} Drop:{list(self.hatch_glitch_drop_pos)}"
                 )
                 self.root.after(
-                    0, lambda: self.edrop_pos_btn.config(text="Record Positions")
-                )
+                            0, lambda: self.hatch_glitch_pos_btn.config(text="Record Positions")
+                        )
                 self.root.after(0, lambda: self.show_overlay("Recorded!", force=True))
-                print(f"[E-DROP] Drop menu at {x}, {y}")
+                print(f"[HATCH-GLITCH] Drop menu at {x}, {y}")
                 print(
-                    f"[E-DROP] Positions: RClick:{self.edrop_rclick_pos} Drop:{self.edrop_drop_pos}"
+                    f"[HATCH-GLITCH] Positions: RClick:{self.hatch_glitch_rclick_pos} Drop:{self.hatch_glitch_drop_pos}"
                 )
                 return False  # Stop listener
 
@@ -4706,8 +4706,8 @@ class QuickDupeApp:
             and not self.recording_quick_items
             and not self.recording_espam
             and not self.recording_keycard
-            and not self.recording_edrop
-            and not self.recording_edrop_efirst
+            and not self.recording_hatch_glitch
+            and not self.recording_hatch_glitch_efirst
             and not self.recording_dc_both
             and not self.recording_dc_outbound
             and not self.recording_dc_inbound
@@ -4806,14 +4806,14 @@ class QuickDupeApp:
                 self.keycard_hotkey_var.set("")
                 self.keycard_record_btn.config(text="Set")
                 self.recording_keycard = False
-            elif self.recording_edrop:
-                self.edrop_hotkey_var.set("")
-                self.edrop_record_btn.config(text="Set")
-                self.recording_edrop = False
-            elif self.recording_edrop_efirst:
-                self.edrop_efirst_hotkey_var.set("")
-                self.edrop_efirst_record_btn.config(text="Set")
-                self.recording_edrop_efirst = False
+            elif self.recording_hatch_glitch:
+                self.hatch_glitch_hotkey_var.set("")
+                self.hatch_glitch_record_btn.config(text="Set")
+                self.recording_hatch_glitch = False
+            elif self.recording_hatch_glitch_efirst:
+                self.hatch_glitch_efirst_hotkey_var.set("")
+                self.hatch_glitch_efirst_record_btn.config(text="Set")
+                self.recording_hatch_glitch_efirst = False
             elif self.recording_stop:
                 self.stop_hotkey_var.set("")
                 self.stop_record_btn.config(text="Set")
@@ -4873,8 +4873,8 @@ class QuickDupeApp:
                 self.mine_hotkey_var,
                 self.espam_hotkey_var,
                 self.keycard_hotkey_var,
-                self.edrop_hotkey_var,
-                self.edrop_efirst_hotkey_var,
+                self.hatch_glitch_hotkey_var,
+                self.hatch_glitch_efirst_hotkey_var,
                 self.stop_hotkey_var,
                 self.dc_both_hotkey_var,
                 self.dc_outbound_hotkey_var,
@@ -4911,14 +4911,14 @@ class QuickDupeApp:
                 self.keycard_hotkey_var.set(hotkey)
                 self.keycard_record_btn.config(text="Set")
                 self.recording_keycard = False
-            elif self.recording_edrop:
-                self.edrop_hotkey_var.set(hotkey)
-                self.edrop_record_btn.config(text="Set")
-                self.recording_edrop = False
-            elif self.recording_edrop_efirst:
-                self.edrop_efirst_hotkey_var.set(hotkey)
-                self.edrop_efirst_record_btn.config(text="Set")
-                self.recording_edrop_efirst = False
+            elif self.recording_hatch_glitch:
+                self.hatch_glitch_hotkey_var.set(hotkey)
+                self.hatch_glitch_record_btn.config(text="Set")
+                self.recording_hatch_glitch = False
+            elif self.recording_hatch_glitch_efirst:
+                self.hatch_glitch_efirst_hotkey_var.set(hotkey)
+                self.hatch_glitch_efirst_record_btn.config(text="Set")
+                self.recording_hatch_glitch_efirst = False
             elif self.recording_stop:
                 self.stop_hotkey_var.set(hotkey)
                 self.stop_record_btn.config(text="Set")
@@ -5447,32 +5447,32 @@ class QuickDupeApp:
         self.config["espam_hold_mode"] = self.espam_hold_mode_var.get()
         self.config["espam_repeat_delay"] = self.espam_repeat_delay_var.get()
         # E-Drop settings (DC→E)
-        self.config["edrop_hotkey"] = self.edrop_hotkey_var.get()
-        self.config["edrop_repeat"] = self.edrop_repeat_var.get()
-        self.config["edrop_dc_mode"] = self.edrop_dc_mode_var.get()
-        self.config["edrop_rclick_pos"] = list(self.edrop_rclick_pos)
-        self.config["edrop_drop_pos"] = list(self.edrop_drop_pos)
-        self.config["edrop_e_press"] = self.edrop_e_press_var.get()
-        self.config["edrop_e_dc_delay"] = self.edrop_e_dc_delay_var.get()
-        self.config["edrop_wait_before_inv"] = self.edrop_wait_before_inv_var.get()
-        self.config["edrop_inv_delay"] = self.edrop_inv_delay_var.get()
-        self.config["edrop_rclick_delay"] = self.edrop_rclick_delay_var.get()
-        self.config["edrop_drop_delay"] = self.edrop_drop_delay_var.get()
-        self.config["edrop_reconnect_delay"] = self.edrop_reconnect_delay_var.get()
-        self.config["edrop_loop_delay"] = self.edrop_loop_delay_var.get()
+        self.config["hatch_glitch_hotkey"] = self.hatch_glitch_hotkey_var.get()
+        self.config["hatch_glitch_repeat"] = self.hatch_glitch_repeat_var.get()
+        self.config["hatch_glitch_dc_mode"] = self.hatch_glitch_dc_mode_var.get()
+        self.config["hatch_glitch_rclick_pos"] = list(self.hatch_glitch_rclick_pos)
+        self.config["hatch_glitch_drop_pos"] = list(self.hatch_glitch_drop_pos)
+        self.config["hatch_glitch_e_press"] = self.hatch_glitch_e_press_var.get()
+        self.config["hatch_glitch_e_dc_delay"] = self.hatch_glitch_e_dc_delay_var.get()
+        self.config["hatch_glitch_wait_before_inv"] = self.hatch_glitch_wait_before_inv_var.get()
+        self.config["hatch_glitch_inv_delay"] = self.hatch_glitch_inv_delay_var.get()
+        self.config["hatch_glitch_rclick_delay"] = self.hatch_glitch_rclick_delay_var.get()
+        self.config["hatch_glitch_drop_delay"] = self.hatch_glitch_drop_delay_var.get()
+        self.config["hatch_glitch_reconnect_delay"] = self.hatch_glitch_reconnect_delay_var.get()
+        self.config["hatch_glitch_loop_delay"] = self.hatch_glitch_loop_delay_var.get()
         # E-Drop settings (E→DC)
-        self.config["edrop_efirst_hotkey"] = self.edrop_efirst_hotkey_var.get()
-        self.config["edrop_efirst_repeat"] = self.edrop_efirst_repeat_var.get()
-        self.config["edrop_efirst_dc_mode"] = self.edrop_efirst_dc_mode_var.get()
-        self.config["edrop_efirst_e_duration"] = self.edrop_efirst_e_duration_var.get()
-        self.config["edrop_efirst_wait_after_e"] = self.edrop_efirst_wait_after_e_var.get()
-        self.config["edrop_efirst_dc_duration"] = self.edrop_efirst_dc_duration_var.get()
-        self.config["edrop_efirst_wait_before_inv"] = self.edrop_efirst_wait_before_inv_var.get()
-        self.config["edrop_efirst_inv_delay"] = self.edrop_efirst_inv_delay_var.get()
-        self.config["edrop_efirst_rclick_delay"] = self.edrop_efirst_rclick_delay_var.get()
-        self.config["edrop_efirst_drop_delay"] = self.edrop_efirst_drop_delay_var.get()
-        self.config["edrop_efirst_reconnect_delay"] = self.edrop_efirst_reconnect_delay_var.get()
-        self.config["edrop_efirst_loop_delay"] = self.edrop_efirst_loop_delay_var.get()
+        self.config["hatch_glitch_efirst_hotkey"] = self.hatch_glitch_efirst_hotkey_var.get()
+        self.config["hatch_glitch_efirst_repeat"] = self.hatch_glitch_efirst_repeat_var.get()
+        self.config["hatch_glitch_efirst_dc_mode"] = self.hatch_glitch_efirst_dc_mode_var.get()
+        self.config["hatch_glitch_efirst_e_duration"] = self.hatch_glitch_efirst_e_duration_var.get()
+        self.config["hatch_glitch_efirst_wait_after_e"] = self.hatch_glitch_efirst_wait_after_e_var.get()
+        self.config["hatch_glitch_efirst_dc_duration"] = self.hatch_glitch_efirst_dc_duration_var.get()
+        self.config["hatch_glitch_efirst_wait_before_inv"] = self.hatch_glitch_efirst_wait_before_inv_var.get()
+        self.config["hatch_glitch_efirst_inv_delay"] = self.hatch_glitch_efirst_inv_delay_var.get()
+        self.config["hatch_glitch_efirst_rclick_delay"] = self.hatch_glitch_efirst_rclick_delay_var.get()
+        self.config["hatch_glitch_efirst_drop_delay"] = self.hatch_glitch_efirst_drop_delay_var.get()
+        self.config["hatch_glitch_efirst_reconnect_delay"] = self.hatch_glitch_efirst_reconnect_delay_var.get()
+        self.config["hatch_glitch_efirst_loop_delay"] = self.hatch_glitch_efirst_loop_delay_var.get()
         # Quick disconnect hotkeys
         self.config["dc_both_hotkey"] = self.dc_both_hotkey_var.get()
         self.config["dc_outbound_hotkey"] = self.dc_outbound_hotkey_var.get()
@@ -5540,13 +5540,13 @@ class QuickDupeApp:
                 f"RClick:{list(self.keycard_rclick_pos)} Drop:{list(self.keycard_drop_pos)}"
             )
 
-        if config.get("edrop_rclick_pos") is not None:
-            self.edrop_rclick_pos = tuple(config["edrop_rclick_pos"])
-        if config.get("edrop_drop_pos") is not None:
-            self.edrop_drop_pos = tuple(config["edrop_drop_pos"])
-        if hasattr(self, "edrop_pos_var"):
-            self.edrop_pos_var.set(
-                f"RClick:{list(self.edrop_rclick_pos)} Drop:{list(self.edrop_drop_pos)}"
+        if config.get("hatch_glitch_rclick_pos") is not None:
+            self.hatch_glitch_rclick_pos = tuple(config["hatch_glitch_rclick_pos"])
+        if config.get("hatch_glitch_drop_pos") is not None:
+            self.hatch_glitch_drop_pos = tuple(config["hatch_glitch_drop_pos"])
+        if hasattr(self, "hatch_glitch_pos_var"):
+            self.hatch_glitch_pos_var.set(
+                f"RClick:{list(self.hatch_glitch_rclick_pos)} Drop:{list(self.hatch_glitch_drop_pos)}"
             )
 
         if config.get("trig_slot_pos") is not None:
@@ -5658,33 +5658,33 @@ class QuickDupeApp:
         self.save_settings()
         print("[RESET] Mine dupe parameters reset to YOUR successful timings")
 
-    def reset_edrop_defaults(self):
-        """Reset E-Drop (DC→E) timing parameters to defaults (NEW METHOD)"""
+    def reset_hatch_glitch_defaults(self):
+        """Reset Hatch glitch (DC→E) timing parameters to defaults (NEW METHOD)"""
         # New method: E + immediate DC, no separate DC duration or E wait
-        self.edrop_e_press_var.set(10)  # Minimal E press
-        self.config["edrop_e_dc_delay"] = 0  # Simultaneous E+DC
-        self.edrop_wait_before_inv_var.set(100)
-        self.edrop_inv_delay_var.set(150)
-        self.edrop_rclick_delay_var.set(100)
-        self.edrop_drop_delay_var.set(100)
-        self.edrop_reconnect_delay_var.set(200)
-        self.edrop_loop_delay_var.set(500)
+        self.hatch_glitch_e_press_var.set(10)  # Minimal E press
+        self.config["hatch_glitch_e_dc_delay"] = 0  # Simultaneous E+DC
+        self.hatch_glitch_wait_before_inv_var.set(100)
+        self.hatch_glitch_inv_delay_var.set(150)
+        self.hatch_glitch_rclick_delay_var.set(100)
+        self.hatch_glitch_drop_delay_var.set(100)
+        self.hatch_glitch_reconnect_delay_var.set(200)
+        self.hatch_glitch_loop_delay_var.set(500)
         self.save_settings()
-        print("[RESET] E-Drop (DC→E) parameters reset to defaults (NEW METHOD)")
+        print("[RESET] Hatch glitch (DC→E) parameters reset to defaults (NEW METHOD)")
 
-    def reset_edrop_efirst_defaults(self):
-        """Reset E-Drop (E→DC) timing parameters to defaults"""
-        self.edrop_efirst_e_duration_var.set(50)
-        self.edrop_efirst_wait_after_e_var.set(150)
-        self.edrop_efirst_dc_duration_var.set(100)
-        self.edrop_efirst_wait_before_inv_var.set(100)
-        self.edrop_efirst_inv_delay_var.set(150)
-        self.edrop_efirst_rclick_delay_var.set(100)
-        self.edrop_efirst_drop_delay_var.set(100)
-        self.edrop_efirst_reconnect_delay_var.set(200)
-        self.edrop_efirst_loop_delay_var.set(500)
+    def reset_hatch_glitch_efirst_defaults(self):
+        """Reset Hatch glitch (E→DC) timing parameters to defaults"""
+        self.hatch_glitch_efirst_e_duration_var.set(50)
+        self.hatch_glitch_efirst_wait_after_e_var.set(150)
+        self.hatch_glitch_efirst_dc_duration_var.set(100)
+        self.hatch_glitch_efirst_wait_before_inv_var.set(100)
+        self.hatch_glitch_efirst_inv_delay_var.set(150)
+        self.hatch_glitch_efirst_rclick_delay_var.set(100)
+        self.hatch_glitch_efirst_drop_delay_var.set(100)
+        self.hatch_glitch_efirst_reconnect_delay_var.set(200)
+        self.hatch_glitch_efirst_loop_delay_var.set(500)
         self.save_settings()
-        print("[RESET] E-Drop (E→DC) parameters reset to defaults")
+        print("[RESET] Hatch glitch (E→DC) parameters reset to defaults")
 
     def reset_all_settings(self):
         """Reset ALL settings including hotkeys and recordings to factory defaults"""
@@ -6065,29 +6065,29 @@ class QuickDupeApp:
 
         # E-Drop hotkey registration commented out per user request
         # Original code:
-        # edrop_hk = self.edrop_hotkey_var.get()
-        # if edrop_hk and edrop_hk != "Press key...":
-        #     try:
-        #         self.edrop_hotkey_registered = keyboard.add_hotkey(
-        #             edrop_hk, self.on_edrop_hotkey, suppress=False
-        #         )
-        #         print(
-        #             f"[HOTKEY] E-Drop (DC→E) registered OK: '{edrop_hk}' -> {self.edrop_hotkey_registered}"
-        #         )
-        #     except Exception as e:
-        #         print(f"[HOTKEY] FAILED edrop '{edrop_hk}': {e}")
-        #
-        # edrop_efirst_hk = self.edrop_efirst_hotkey_var.get()
-        # if edrop_efirst_hk and edrop_efirst_hk != "Press key...":
-        #     try:
-        #         self.edrop_efirst_hotkey_registered = keyboard.add_hotkey(
-        #             edrop_efirst_hk, self.on_edrop_efirst_hotkey, suppress=False
-        #         )
-        #         print(
-        #             f"[HOTKEY] E-Drop (E→DC) registered OK: '{edrop_efirst_hk}' -> {self.edrop_efirst_hotkey_registered}"
-        #         )
-        #     except Exception as e:
-        #         print(f"[HOTKEY] FAILED edrop_efirst '{edrop_efirst_hk}': {e}")
+        hatch_glitch_hk = self.hatch_glitch_hotkey_var.get()
+        if hatch_glitch_hk and hatch_glitch_hk != "Press key...":
+            try:
+                self.hatch_glitch_hotkey_registered = keyboard.add_hotkey(
+                    hatch_glitch_hk, self.on_hatch_glitch_hotkey, suppress=False
+                )
+                print(
+                    f"[HOTKEY] Hatch glitch (DC→E) registered OK: '{hatch_glitch_hk}' -> {self.hatch_glitch_hotkey_registered}"
+                )
+            except Exception as e:
+                print(f"[HOTKEY] FAILED hatch_glitch '{hatch_glitch_hk}': {e}")
+        
+        hatch_glitch_efirst_hk = self.hatch_glitch_efirst_hotkey_var.get()
+        if hatch_glitch_efirst_hk and hatch_glitch_efirst_hk != "Press key...":
+            try:
+                self.hatch_glitch_efirst_hotkey_registered = keyboard.add_hotkey(
+                    hatch_glitch_efirst_hk, self.on_hatch_glitch_efirst_hotkey, suppress=False
+                )
+                print(
+                    f"[HOTKEY] Hatch glitch (E→DC) registered OK: '{hatch_glitch_efirst_hk}' -> {self.hatch_glitch_efirst_hotkey_registered}"
+                )
+            except Exception as e:
+                print(f"[HOTKEY] FAILED hatch_glitch_efirst '{hatch_glitch_efirst_hk}': {e}")
 
         keycard_hk = self.keycard_hotkey_var.get()
         if keycard_hk and keycard_hk != "Press key...":
@@ -6268,7 +6268,7 @@ class QuickDupeApp:
         self.quick_items_stop = True
         self.espam_stop = True
         self.mine_stop = True
-        self.edrop_stop = True
+        self.hatch_glitch_stop = True
         self.keycard_stop = True
         # Also cancel any active recordings
         self._drag_recording_cancelled = True
@@ -7220,7 +7220,7 @@ class QuickDupeApp:
                 # Use ONLY keycard-specific e->DC delay (use centralized default)
                 e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
                 self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
-                # Respect keycard-specific DC mode (not edrop settings)
+                # Respect keycard-specific DC mode (not hatch_glitch settings)
                 dc_mode = self.keycard_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
@@ -7355,170 +7355,163 @@ class QuickDupeApp:
             self.root.after(0, lambda: self.show_overlay("Key Card Glitch stopped."))
             print(f"[KEYCARD] Macro finished after {cycle} cycles")
 
-    def on_edrop_hotkey(self):
-        """Toggle E-Drop macro"""
-        # E-Drop hotkey handler intentionally disabled (commented-out feature). Do nothing.
-        print("[HOTKEY] E-Drop hotkey pressed but E-Drop feature is commented out.")
-        return
-        if not self._espam_lock.acquire(
-            blocking=False
-        ):  # Reuse espam lock for simplicity
-            return
+    def on_hatch_glitch_hotkey(self):
+        """Toggle Hatch glitch v2 macro"""
+        # Hatch glitch hotkey handler intentionally disabled (commented-out feature). Do nothing.
+        print("[HOTKEY] Hatch glitch hotkey pressed but feature is commented out.")
+        # return
+        # if not self._espam_lock.acquire(
+        #     blocking=False
+        # ):  # Reuse espam lock for simplicity
+        #     return
         try:
-            print(f"[HOTKEY] Hatch glitch v2 hotkey PRESSED! running={self.edrop_running}")
-            if self.edrop_running:
-                print("[HOTKEY] Setting edrop_stop = True")
-                self.edrop_stop = True
-                self.root.after(0, lambda: self.edrop_status_var.set("Stopping..."))
+            print(f"[HOTKEY] Hatch glitch v2 hotkey PRESSED! running={self.hatch_glitch_running}")
+            if self.hatch_glitch_running:
+                print("[HOTKEY] Setting hatch_glitch_stop = True")
+                self.hatch_glitch_stop = True
+                self.root.after(0, lambda: self.hatch_glitch_status_var.set("Stopping..."))
             else:
                 print("[HOTKEY] Starting Hatch glitch v2 macro")
-                self.edrop_stop = False
+                self.hatch_glitch_stop = False
                 self.mine_stop = False
                 self.triggernade_stop = False
                 self.espam_stop = False
-                self.edrop_running = True
-                self.root.after(0, lambda: self.edrop_status_var.set("RUNNING"))
+                self.hatch_glitch_running = True
+                self.root.after(0, lambda: self.hatch_glitch_status_var.set("RUNNING"))
                 self.root.after(
-                    0, lambda: self.edrop_status_label.config(foreground="orange")
+                    0, lambda: self.hatch_glitch_status_label.config(foreground="orange")
                 )
                 self.root.after(0, lambda: self.show_overlay("Hatch glitch v2 started"))
-                threading.Thread(target=self.run_edrop_macro, daemon=True).start()
+                threading.Thread(target=self.run_hatch_glitch_macro, daemon=True).start()
         finally:
             self._espam_lock.release()
 
-    def on_edrop_efirst_hotkey(self):
-        """Toggle E-Drop E-First macro"""
-        # E-Drop (E→DC) hotkey handler intentionally disabled (commented-out feature). Do nothing.
-        print("[HOTKEY] E-Drop (E→DC) hotkey pressed but feature is commented out.")
-        return
-        if not self._espam_lock.acquire(
-            blocking=False
-        ):  # Reuse espam lock for simplicity
-            return
+    def on_hatch_glitch_efirst_hotkey(self):
+        """Toggle Hatch glitch (E→DC) macro"""
+        # Hatch glitch (E→DC) hotkey handler intentionally disabled (commented-out feature). Do nothing.
+        print("[HOTKEY] Hatch glitch (E→DC) hotkey pressed but feature is commented out.")
+        # return
+        # if not self._espam_lock.acquire(
+        #     blocking=False
+        # ):  # Reuse espam lock for simplicity
+        #     return
         try:
-            print(f"[HOTKEY] E-Drop (E→DC) hotkey PRESSED! running={self.edrop_efirst_running}")
-            if self.edrop_efirst_running:
-                print("[HOTKEY] Setting edrop_stop = True")
-                self.edrop_stop = True
-                self.root.after(0, lambda: self.edrop_efirst_status_var.set("Stopping..."))
+            print(f"[HOTKEY] Hatch glitch (E→DC) hotkey PRESSED! running={self.hatch_glitch_efirst_running}")
+            if self.hatch_glitch_efirst_running:
+                print("[HOTKEY] Setting hatch_glitch_stop = True")
+                self.hatch_glitch_stop = True
+                self.root.after(0, lambda: self.hatch_glitch_efirst_status_var.set("Stopping..."))
             else:
-                print("[HOTKEY] Starting E-Drop (E→DC) macro")
-                self.edrop_stop = False
+                print("[HOTKEY] Starting Hatch glitch (E→DC) macro")
+                self.hatch_glitch_stop = False
                 self.mine_stop = False
                 self.triggernade_stop = False
                 self.espam_stop = False
-                self.edrop_efirst_running = True
-                self.root.after(0, lambda: self.edrop_efirst_status_var.set("RUNNING"))
+                self.hatch_glitch_efirst_running = True
+                self.root.after(0, lambda: self.hatch_glitch_efirst_status_var.set("RUNNING"))
                 self.root.after(
-                    0, lambda: self.edrop_efirst_status_label.config(foreground="orange")
+                    0, lambda: self.hatch_glitch_efirst_status_label.config(foreground="orange")
                 )
-                self.root.after(0, lambda: self.show_overlay("E-Drop (E→DC) started"))
-                threading.Thread(target=self.run_edrop_e_first_macro, daemon=True).start()
+                self.root.after(0, lambda: self.show_overlay("Hatch glitch (E→DC) started"))
+                threading.Thread(target=self.run_hatch_glitch_e_first_macro, daemon=True).start()
         finally:
             self._espam_lock.release()
 
-    def run_edrop_e_first_macro(self):
-        """E-Drop Collection macro (E FIRST variant): E → wait → DC → Inventory → Right-click → Drop → Reconnect"""
-        # E-Drop E-First macro disabled (commented out). Return immediately.
-        print("[E-DROP-EFIRST] run skipped because E-Drop feature is commented out")
-        try:
-            self.root.after(0, lambda: self.edrop_efirst_status_var.set("Disabled"))
-        except Exception:
-            pass
-        return
+    def run_hatch_glitch_e_first_macro(self):
+        """Hatch glitch (E→DC) macro (E-FIRST variant): E → wait → DC → Inventory → Right-click → Drop → Reconnect"""
         # Get settings (E→DC specific)
-        repeat = self.edrop_efirst_repeat_var.get()
-        e_duration = self.edrop_efirst_e_duration_var.get()
-        wait_after_e = self.edrop_efirst_wait_after_e_var.get()
-        dc_duration = self.edrop_efirst_dc_duration_var.get()
-        wait_before_inv = self.edrop_efirst_wait_before_inv_var.get()
-        inv_delay = self.edrop_efirst_inv_delay_var.get()
-        rclick_delay = self.edrop_efirst_rclick_delay_var.get()
-        drop_delay = self.edrop_efirst_drop_delay_var.get()
-        reconnect_delay = self.edrop_efirst_reconnect_delay_var.get()
-        loop_delay = self.edrop_efirst_loop_delay_var.get()
+        repeat = self.hatch_glitch_efirst_repeat_var.get()
+        e_duration = self.hatch_glitch_efirst_e_duration_var.get()
+        wait_after_e = self.hatch_glitch_efirst_wait_after_e_var.get()
+        dc_duration = self.hatch_glitch_efirst_dc_duration_var.get()
+        wait_before_inv = self.hatch_glitch_efirst_wait_before_inv_var.get()
+        inv_delay = self.hatch_glitch_efirst_inv_delay_var.get()
+        rclick_delay = self.hatch_glitch_efirst_rclick_delay_var.get()
+        drop_delay = self.hatch_glitch_efirst_drop_delay_var.get()
+        reconnect_delay = self.hatch_glitch_efirst_reconnect_delay_var.get()
+        loop_delay = self.hatch_glitch_efirst_loop_delay_var.get()
 
-        rclick_pos = self.edrop_rclick_pos
-        drop_pos = self.edrop_drop_pos
+        rclick_pos = self.hatch_glitch_rclick_pos
+        drop_pos = self.hatch_glitch_drop_pos
 
         is_disconnected = False
         cycle = 0
 
         try:
             while True:
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 cycle += 1
-                print(f"[E-DROP-EFIRST] Cycle {cycle} starting...")
+                print(f"[HATCH-GLITCH-EFIRST] Cycle {cycle} starting...")
                 self.root.after(
-                    0, lambda c=cycle: self.edrop_efirst_status_var.set(f"Cycle {c}")
+                    0, lambda c=cycle: self.hatch_glitch_efirst_status_var.set(f"Cycle {c}")
                 )
 
                 # 1. Press E FIRST (interact with door/object)
                 pynput_keyboard.press("e")
                 self.vsleep(e_duration)
                 pynput_keyboard.release("e")
-                print(f"[E-DROP-EFIRST] Pressed E (interact)")
+                print(f"[HATCH-GLITCH-EFIRST] Pressed E (interact)")
                 self.root.after(0, lambda: self.show_overlay("E → Wait → DC"))
 
                 # 2. Wait AFTER E press
                 self.vsleep(wait_after_e)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 # 3. Disconnect (use selected mode)
-                dc_mode = self.edrop_efirst_dc_mode_var.get()
+                dc_mode = self.hatch_glitch_efirst_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
-                    print(f"[E-DROP-EFIRST] Disconnected (BOTH)")
+                    print(f"[HATCH-GLITCH-EFIRST] Disconnected (BOTH)")
                 elif dc_mode == "outbound":
                     start_packet_drop(outbound=True, inbound=False)
-                    print(f"[E-DROP-EFIRST] Disconnected (OUTBOUND only)")
+                    print(f"[HATCH-GLITCH-EFIRST] Disconnected (OUTBOUND only)")
                 else:  # inbound
                     start_packet_drop(outbound=False, inbound=True)
-                    print(f"[E-DROP-EFIRST] Disconnected (INBOUND only)")
+                    print(f"[HATCH-GLITCH-EFIRST] Disconnected (INBOUND only)")
                 is_disconnected = True
                 
                 # Hold DC for specified duration
                 self.vsleep(dc_duration)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 # 4. Wait before opening inventory
                 self.vsleep(wait_before_inv)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 # 5. Open inventory (TAB)
                 pynput_keyboard.press(Key.tab)
                 self.vsleep(inv_delay)
                 pynput_keyboard.release(Key.tab)
-                print(f"[E-DROP-EFIRST] Inventory opened")
+                print(f"[HATCH-GLITCH-EFIRST] Inventory opened")
 
                 # 6. Right-click on item
                 pynput_mouse.position = rclick_pos
                 self.vsleep(rclick_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
                 pynput_mouse.click(MouseButton.right)
-                print(f"[E-DROP-EFIRST] Right-clicked at {rclick_pos}")
+                print(f"[HATCH-GLITCH-EFIRST] Right-clicked at {rclick_pos}")
 
                 # 7. Click drop menu
                 self.vsleep(drop_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
                 pynput_mouse.position = drop_pos
                 self.vsleep(50)  # Small delay before click
                 pynput_mouse.click(MouseButton.left)
-                print(f"[E-DROP-EFIRST] Clicked drop at {drop_pos}")
+                print(f"[HATCH-GLITCH-EFIRST] Clicked drop at {drop_pos}")
 
                 # 8. Close inventory (TAB toggle)
                 self.vsleep(25)
                 pynput_keyboard.press(Key.tab)
                 self.vsleep(25)
                 pynput_keyboard.release(Key.tab)
-                print(f"[E-DROP-EFIRST] Inventory closed")
+                print(f"[HATCH-GLITCH-EFIRST] Inventory closed")
 
                 # 9. Reconnect
                 stop_packet_drop()
@@ -7531,12 +7524,12 @@ class QuickDupeApp:
 
                 # Check if looping or one-shot
                 if not repeat:
-                    print(f"[E-DROP-EFIRST] Single run complete")
+                    print(f"[HATCH-GLITCH-EFIRST] Single run complete")
                     break
 
                 # Loop delay before next cycle
                 self.vsleep(loop_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
         finally:
@@ -7544,115 +7537,109 @@ class QuickDupeApp:
             pynput_keyboard.release(Key.tab)
             if is_disconnected:
                 stop_packet_drop()
-            self.edrop_efirst_running = False
-            self.edrop_stop = False
-            self.root.after(0, lambda: self.edrop_efirst_status_var.set("Ready"))
+            self.hatch_glitch_efirst_running = False
+            self.hatch_glitch_stop = False
+            self.root.after(0, lambda: self.hatch_glitch_efirst_status_var.set("Ready"))
             self.root.after(
-                0, lambda: self.edrop_efirst_status_label.config(foreground="gray")
+                0, lambda: self.hatch_glitch_efirst_status_label.config(foreground="gray")
             )
-            self.root.after(0, lambda: self.show_overlay("E-Drop (E→DC) stopped."))
-            print(f"[E-DROP-EFIRST] Macro finished after {cycle} cycles")
+            self.root.after(0, lambda: self.show_overlay("Hatch glitch (E→DC) stopped."))
+            print(f"[HATCH-GLITCH-EFIRST] Macro finished after {cycle} cycles")
 
-    def run_edrop_macro(self):
-        """E-Drop Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""
-        # E-Drop macro disabled (commented out). Return immediately.
-        print("[E-DROP] run skipped because E-Drop feature is commented out")
-        try:
-            self.root.after(0, lambda: self.edrop_status_var.set("Disabled"))
-        except Exception:
-            pass
-        return
+    def run_hatch_glitch_macro(self):
+        """Hatch glitch (DC→E/E→DC) Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""
+
         # Get settings
-        repeat = self.edrop_repeat_var.get()
-        e_press = self.edrop_e_press_var.get()  # E press duration
-        e_dc_delay = self.config.get("edrop_e_dc_delay", 0)  # Delay between E and DC (0 = simultaneous)
-        wait_before_inv = self.edrop_wait_before_inv_var.get()
-        inv_delay = self.edrop_inv_delay_var.get()
-        rclick_delay = self.edrop_rclick_delay_var.get()
-        drop_delay = self.edrop_drop_delay_var.get()
-        reconnect_delay = self.edrop_reconnect_delay_var.get()
-        loop_delay = self.edrop_loop_delay_var.get()
+        repeat = self.hatch_glitch_repeat_var.get()
+        e_press = self.hatch_glitch_e_press_var.get()  # E press duration
+        e_dc_delay = self.config.get("hatch_glitch_e_dc_delay", 0)  # Delay between E and DC (0 = simultaneous)
+        wait_before_inv = self.hatch_glitch_wait_before_inv_var.get()
+        inv_delay = self.hatch_glitch_inv_delay_var.get()
+        rclick_delay = self.hatch_glitch_rclick_delay_var.get()
+        drop_delay = self.hatch_glitch_drop_delay_var.get()
+        reconnect_delay = self.hatch_glitch_reconnect_delay_var.get()
+        loop_delay = self.hatch_glitch_loop_delay_var.get()
 
-        rclick_pos = self.edrop_rclick_pos
-        drop_pos = self.edrop_drop_pos
+        rclick_pos = self.hatch_glitch_rclick_pos
+        drop_pos = self.hatch_glitch_drop_pos
 
         is_disconnected = False
         cycle = 0
 
         try:
             while True:
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 cycle += 1
-                print(f"[E-DROP] Cycle {cycle} starting...")
+                print(f"[HATCH-GLITCH] Cycle {cycle} starting...")
                 self.root.after(
-                    0, lambda c=cycle: self.edrop_status_var.set(f"Cycle {c}")
+                    0, lambda c=cycle: self.hatch_glitch_status_var.set(f"Cycle {c}")
                 )
 
                 # 1. Press E to interact with door/hatch
                 pynput_keyboard.press("e")
                 self.vsleep(e_press)  # Configurable E press duration
                 pynput_keyboard.release("e")
-                print(f"[E-DROP] Pressed E (interact with door, {e_press}ms)")
+                print(f"[HATCH-GLITCH] Pressed E (interact with door, {e_press}ms)")
                 self.root.after(0, lambda: self.show_overlay("E + DC"))
 
                 # 2. IMMEDIATELY disconnect (use selected mode) - simultaneous with E
                 self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
-                dc_mode = self.edrop_dc_mode_var.get()
+                dc_mode = self.hatch_glitch_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
-                    print(f"[E-DROP] Disconnected (BOTH) immediately after E")
+                    print(f"[HATCH-GLITCH] Disconnected (BOTH) immediately after E")
                 elif dc_mode == "outbound":
                     start_packet_drop(outbound=True, inbound=False)
-                    print(f"[E-DROP] Disconnected (OUTBOUND) immediately after E")
+                    print(f"[HATCH-GLITCH] Disconnected (OUTBOUND) immediately after E")
                 else:  # inbound
                     start_packet_drop(outbound=False, inbound=True)
-                    print(f"[E-DROP] Disconnected (INBOUND) immediately after E")
+                    print(f"[HATCH-GLITCH] Disconnected (INBOUND) immediately after E")
                 is_disconnected = True
 
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 # 3. Wait before opening inventory
                 self.vsleep(wait_before_inv)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
                 # 4. Open inventory (TAB)
                 pynput_keyboard.press(Key.tab)
                 self.vsleep(inv_delay)
                 pynput_keyboard.release(Key.tab)
-                print(f"[E-DROP] Inventory opened")
+                print(f"[HATCH-GLITCH] Inventory opened")
 
                 # 5. Right-click on key/item
                 pynput_mouse.position = rclick_pos
                 self.vsleep(rclick_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
                 pynput_mouse.click(MouseButton.right)
-                print(f"[E-DROP] Right-clicked at {rclick_pos}")
+                print(f"[HATCH-GLITCH] Right-clicked at {rclick_pos}")
 
                 # 6. Click "Drop to Ground" menu option
                 self.vsleep(drop_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
                 pynput_mouse.position = drop_pos
                 self.vsleep(50)  # Small delay before click
                 pynput_mouse.click(MouseButton.left)
-                print(f"[E-DROP] Clicked drop at {drop_pos}")
+                print(f"[HATCH-GLITCH] Clicked drop at {drop_pos}")
 
                 # 7. Close inventory (TAB toggle)
                 self.vsleep(25)
                 pynput_keyboard.press(Key.tab)
                 self.vsleep(25)
                 pynput_keyboard.release(Key.tab)
-                print(f"[E-DROP] Inventory closed")
+                print(f"[HATCH-GLITCH] Inventory closed")
 
                 # 8. Reconnect (NO E-SPAM needed with new method!)
                 stop_packet_drop()
                 is_disconnected = False
-                print(f"[E-DROP] Reconnected - door should open, key should drop")
+                print(f"[HATCH-GLITCH] Reconnected - door should open, key should drop")
                 self.root.after(0, lambda: self.show_overlay("Reconnected ✓"))
 
                 # 9. Wait after reconnect
@@ -7660,12 +7647,12 @@ class QuickDupeApp:
 
                 # Check if looping or one-shot
                 if not repeat:
-                    print(f"[E-DROP] Single run complete")
+                    print(f"[HATCH-GLITCH] Single run complete")
                     break
 
                 # Loop delay before next cycle
                 self.vsleep(loop_delay)
-                if self.edrop_stop:
+                if self.hatch_glitch_stop:
                     break
 
         finally:
@@ -7673,14 +7660,14 @@ class QuickDupeApp:
             pynput_keyboard.release(Key.tab)
             if is_disconnected:
                 stop_packet_drop()
-            self.edrop_running = False
-            self.edrop_stop = False
-            self.root.after(0, lambda: self.edrop_status_var.set("Ready"))
+            self.hatch_glitch_running = False
+            self.hatch_glitch_stop = False
+            self.root.after(0, lambda: self.hatch_glitch_status_var.set("Ready"))
             self.root.after(
-                0, lambda: self.edrop_status_label.config(foreground="gray")
+                0, lambda: self.hatch_glitch_status_label.config(foreground="gray")
             )
             self.root.after(0, lambda: self.show_overlay("Hatch glitch v2 stopped."))
-            print(f"[E-DROP] Macro finished after {cycle} cycles")
+            print(f"[HATCH-GLITCH] Macro finished after {cycle} cycles")
 
     def show_overlay(self, text, force=False):
         if not force and not self.show_overlay_var.get():
