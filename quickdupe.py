@@ -25,7 +25,8 @@ from utils.network import (
     stop_packet_tamper,
     is_tampering,
 )
-from defaults import (
+from utils.buttons import release_buttons
+from config.defaults import (
     CLICK_HOLD_MS,
     CONTEXT_MENU_WAIT_MS,
     KEYCARD_DC_WAIT_DEFAULT,
@@ -39,7 +40,7 @@ from defaults import (
     KEYCARD_E_DC_DELAY_DEFAULT,
     KEYCARD_OFFLINE_ESPAM_DEFAULT,
     KEYCARD_RECONNECT_ESPAM_DEFAULT,
-    KEYCARD_SPAM_DELAY_DEFAULT,
+    KEYCARD_ESPAM_DELAY_DEFAULT,
 )
 from utils.config import (
     CONFIG_FILE,
@@ -48,6 +49,7 @@ from utils.config import (
     load_custom_macros,
     save_custom_macros,
 )
+
 
 # =============================================================================
 # OBFUSCATION FEATURES (opt-in: requires "obfuscate" file next to exe)
@@ -2193,6 +2195,26 @@ class QuickDupeApp:
         ).pack(side="left", padx=5)
 
         # Key Card Glitch Timings
+        # DC Mode Selection for Keycard (Both/Outbound/Inbound)
+        keycard_dc_frame = ttk.Frame(frame)
+        keycard_dc_frame.pack(fill="x", padx=10, pady=5)
+        ttk.Label(keycard_dc_frame, text="Disconnect Mode:").pack(anchor="w")
+        self.keycard_dc_mode_var = tk.StringVar(
+            value=self.config.get("keycard_dc_mode", "both")
+        )
+        for text, mode in [
+            ("Both (In+Out)", "both"),
+            ("Outbound", "outbound"),
+            ("Inbound", "inbound"),
+        ]:
+            ttk.Radiobutton(
+                keycard_dc_frame,
+                text=text,
+                variable=self.keycard_dc_mode_var,
+                value=mode,
+                command=self.save_settings,
+            ).pack(anchor="w", padx=20)
+
         self.create_slider(
             frame, "DC wait time:", "keycard_dc_wait", 100, 50, 500, "ms"
         )
@@ -2275,7 +2297,7 @@ class QuickDupeApp:
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # ===== E-DROP (DC→E) SECTION =====
+        # E-DROP (DC→E)
         edrop_header = ttk.Frame(frame)
         edrop_header.pack(pady=(5, 5))
         ttk.Label(
@@ -2380,7 +2402,7 @@ class QuickDupeApp:
 
         ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=10)
 
-        # ===== E-DROP (E→DC) SECTION =====
+        # E-DROP (E→DC)
         edrop_efirst_header = ttk.Frame(frame)
         edrop_efirst_header.pack(pady=(5, 5))
         ttk.Label(
@@ -3308,6 +3330,7 @@ class QuickDupeApp:
             self.macro_status_var.set(f"{len(events)} events recorded")
         else:
             self.macro_status_var.set("Ctrl+Enter to record")
+
 
     def _save_current_macro_from_ui(self):
         """Save UI data to current macro"""
@@ -5377,6 +5400,7 @@ class QuickDupeApp:
         self.config["keycard_hotkey"] = self.keycard_hotkey_var.get()
         self.config["keycard_rclick_pos"] = list(self.keycard_rclick_pos)
         self.config["keycard_drop_pos"] = list(self.keycard_drop_pos)
+        self.config["keycard_dc_mode"] = self.keycard_dc_mode_var.get()
         self.config["keycard_dc_wait"] = self.keycard_dc_wait_var.get()
         self.config["keycard_inv_delay"] = self.keycard_inv_delay_var.get()
         self.config["keycard_rclick_delay"] = self.keycard_rclick_delay_var.get()
@@ -6039,29 +6063,31 @@ class QuickDupeApp:
             except Exception as e:
                 print(f"[HOTKEY] FAILED espam '{espam_hk}': {e}")
 
-        edrop_hk = self.edrop_hotkey_var.get()
-        if edrop_hk and edrop_hk != "Press key...":
-            try:
-                self.edrop_hotkey_registered = keyboard.add_hotkey(
-                    edrop_hk, self.on_edrop_hotkey, suppress=False
-                )
-                print(
-                    f"[HOTKEY] E-Drop (DC→E) registered OK: '{edrop_hk}' -> {self.edrop_hotkey_registered}"
-                )
-            except Exception as e:
-                print(f"[HOTKEY] FAILED edrop '{edrop_hk}': {e}")
-
-        edrop_efirst_hk = self.edrop_efirst_hotkey_var.get()
-        if edrop_efirst_hk and edrop_efirst_hk != "Press key...":
-            try:
-                self.edrop_efirst_hotkey_registered = keyboard.add_hotkey(
-                    edrop_efirst_hk, self.on_edrop_efirst_hotkey, suppress=False
-                )
-                print(
-                    f"[HOTKEY] E-Drop (E→DC) registered OK: '{edrop_efirst_hk}' -> {self.edrop_efirst_hotkey_registered}"
-                )
-            except Exception as e:
-                print(f"[HOTKEY] FAILED edrop_efirst '{edrop_efirst_hk}': {e}")
+        # E-Drop hotkey registration commented out per user request
+        # Original code:
+        # edrop_hk = self.edrop_hotkey_var.get()
+        # if edrop_hk and edrop_hk != "Press key...":
+        #     try:
+        #         self.edrop_hotkey_registered = keyboard.add_hotkey(
+        #             edrop_hk, self.on_edrop_hotkey, suppress=False
+        #         )
+        #         print(
+        #             f"[HOTKEY] E-Drop (DC→E) registered OK: '{edrop_hk}' -> {self.edrop_hotkey_registered}"
+        #         )
+        #     except Exception as e:
+        #         print(f"[HOTKEY] FAILED edrop '{edrop_hk}': {e}")
+        #
+        # edrop_efirst_hk = self.edrop_efirst_hotkey_var.get()
+        # if edrop_efirst_hk and edrop_efirst_hk != "Press key...":
+        #     try:
+        #         self.edrop_efirst_hotkey_registered = keyboard.add_hotkey(
+        #             edrop_efirst_hk, self.on_edrop_efirst_hotkey, suppress=False
+        #         )
+        #         print(
+        #             f"[HOTKEY] E-Drop (E→DC) registered OK: '{edrop_efirst_hk}' -> {self.edrop_efirst_hotkey_registered}"
+        #         )
+        #     except Exception as e:
+        #         print(f"[HOTKEY] FAILED edrop_efirst '{edrop_efirst_hk}': {e}")
 
         keycard_hk = self.keycard_hotkey_var.get()
         if keycard_hk and keycard_hk != "Press key...":
@@ -6322,12 +6348,7 @@ class QuickDupeApp:
         )
 
         # Release ALL buttons and keys before starting
-        pynput_mouse.release(MouseButton.left)
-        pynput_mouse.release(MouseButton.left)
-        pynput_mouse.release(MouseButton.right)
-        pynput_keyboard.release("e")
-        pynput_keyboard.release("q")
-        pynput_keyboard.release(Key.tab)
+        release_buttons(self)
 
         # Brief delay so starting hotkey doesn't trigger stop
         time.sleep(0.2)
@@ -6835,9 +6856,7 @@ class QuickDupeApp:
         print(f"[MINE] Using drag: {self.mine_drag_start} → {self.mine_drag_end}")
 
         # Release all buttons before starting
-        pynput_mouse.release(MouseButton.left)
-        pynput_mouse.release(MouseButton.right)
-        pynput_keyboard.release(Key.tab)
+        release_buttons(self)
 
         hotkey = self.mine_hotkey_var.get()
         time.sleep(0.2)
@@ -7154,10 +7173,7 @@ class QuickDupeApp:
         print(f"[KEYCARD] Using positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
 
         # Release all buttons before starting
-        pynput_mouse.release(MouseButton.left)
-        pynput_mouse.release(MouseButton.right)
-        pynput_keyboard.release(Key.tab)
-        pynput_keyboard.release("e")
+        release_buttons(self)
 
         # Brief delay so starting hotkey doesn't trigger stop
         time.sleep(0.2)
@@ -7189,7 +7205,7 @@ class QuickDupeApp:
                 drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
                 offline_spam_duration = self.config.get("keycard_offline_espam_duration", KEYCARD_OFFLINE_ESPAM_DEFAULT)
                 reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
-                spam_delay = self.config.get("keycard_espam_delay", KEYCARD_SPAM_DELAY_DEFAULT)
+                spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
 
                 rclick_x, rclick_y = self.keycard_rclick_pos
                 drop_x, drop_y = self.keycard_drop_pos
@@ -7201,10 +7217,11 @@ class QuickDupeApp:
                 print(f"[{cycle}] Step 2: Disconnecting...")
                 
                 # IMMEDIATELY disconnect (use selected mode) - simultaneous with E
-                # Use ONLY keycard-specific e->DC delay (default 0)
-                e_dc_delay = self.config.get("keycard_e_dc_delay", 0)
+                # Use ONLY keycard-specific e->DC delay (use centralized default)
+                e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
                 self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
-                dc_mode = self.edrop_dc_mode_var.get()
+                # Respect keycard-specific DC mode (not edrop settings)
+                dc_mode = self.keycard_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
                     print(f"[KEYCARD] Disconnected (BOTH) immediately after E")
@@ -7272,7 +7289,7 @@ class QuickDupeApp:
                 print(f"[{cycle}] Step 4: E-spamming while OFFLINE for {offline_spam_duration}ms...")
                 self.root.after(0, lambda: self.show_overlay("E-Spam (offline)"))
                 
-                spam_delay = spam_delay or KEYCARD_SPAM_DELAY_DEFAULT
+                spam_delay = spam_delay or KEYCARD_ESPAM_DELAY_DEFAULT
                 offline_spam_duration = offline_spam_duration or KEYCARD_OFFLINE_ESPAM_DEFAULT
                 offline_spam_count = int(offline_spam_duration / spam_delay) if spam_delay > 0 else 0
                 for i in range(offline_spam_count):
@@ -7340,6 +7357,9 @@ class QuickDupeApp:
 
     def on_edrop_hotkey(self):
         """Toggle E-Drop macro"""
+        # E-Drop hotkey handler intentionally disabled (commented-out feature). Do nothing.
+        print("[HOTKEY] E-Drop hotkey pressed but E-Drop feature is commented out.")
+        return
         if not self._espam_lock.acquire(
             blocking=False
         ):  # Reuse espam lock for simplicity
@@ -7368,6 +7388,9 @@ class QuickDupeApp:
 
     def on_edrop_efirst_hotkey(self):
         """Toggle E-Drop E-First macro"""
+        # E-Drop (E→DC) hotkey handler intentionally disabled (commented-out feature). Do nothing.
+        print("[HOTKEY] E-Drop (E→DC) hotkey pressed but feature is commented out.")
+        return
         if not self._espam_lock.acquire(
             blocking=False
         ):  # Reuse espam lock for simplicity
@@ -7396,6 +7419,13 @@ class QuickDupeApp:
 
     def run_edrop_e_first_macro(self):
         """E-Drop Collection macro (E FIRST variant): E → wait → DC → Inventory → Right-click → Drop → Reconnect"""
+        # E-Drop E-First macro disabled (commented out). Return immediately.
+        print("[E-DROP-EFIRST] run skipped because E-Drop feature is commented out")
+        try:
+            self.root.after(0, lambda: self.edrop_efirst_status_var.set("Disabled"))
+        except Exception:
+            pass
+        return
         # Get settings (E→DC specific)
         repeat = self.edrop_efirst_repeat_var.get()
         e_duration = self.edrop_efirst_e_duration_var.get()
@@ -7525,6 +7555,13 @@ class QuickDupeApp:
 
     def run_edrop_macro(self):
         """E-Drop Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""
+        # E-Drop macro disabled (commented out). Return immediately.
+        print("[E-DROP] run skipped because E-Drop feature is commented out")
+        try:
+            self.root.after(0, lambda: self.edrop_status_var.set("Disabled"))
+        except Exception:
+            pass
+        return
         # Get settings
         repeat = self.edrop_repeat_var.get()
         e_press = self.edrop_e_press_var.get()  # E press duration

@@ -8,8 +8,10 @@ CLICK_HOLD_MS = 25
 CONTEXT_MENU_WAIT_MS = 50
 
 # Delay after pressing TAB to allow inventory to open/close
-TAB_KEY_PRESS_DELAY_MS = 50
-TAB_CLOSE_DELAY_MS = 100
+# Split into two halves in macros (press hold + post-release wait).
+# Default total ~70ms (matches keycard inv default), so use 35ms each.
+TAB_KEY_PRESS_DELAY_MS = 35
+TAB_CLOSE_DELAY_MS = 35
 
 # Small delay after reconnect call to let reconnect start
 RECONNECT_START_DELAY_MS = 25
@@ -21,7 +23,9 @@ KEY_PRESS_HOLD_MS = 30
 KEYCARD_E_DC_DELAY_DEFAULT = 0  # ms between E and disconnect (0 = simultaneous)
 KEYCARD_OFFLINE_ESPAM_DEFAULT = 500
 KEYCARD_RECONNECT_ESPAM_DEFAULT = 152
-KEYCARD_SPAM_DELAY_DEFAULT = 20
+# Match UI default for keycard E‑spam delay (ms between E presses)
+# Named as _ESPAM_DELAY to match config key `keycard_espam_delay`.
+KEYCARD_ESPAM_DELAY_DEFAULT = 50
 
 # Keycard interaction timing defaults (match UI shown in screenshot)
 KEYCARD_DC_WAIT_DEFAULT = 50

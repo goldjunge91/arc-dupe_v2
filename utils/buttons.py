@@ -10,5 +10,16 @@ def release_buttons(self):
     # Release all buttons before starting
     pynput_mouse.release(MouseButton.left)
     pynput_mouse.release(MouseButton.right)
-    pynput_keyboard.release(Key.tab)
-    pynput_keyboard.release("e")
+    # Release common keyboard keys we may have left pressed
+    try:
+        pynput_keyboard.release(Key.tab)
+    except Exception:
+        pass
+    try:
+        pynput_keyboard.release("e")
+    except Exception:
+        pass
+    try:
+        pynput_keyboard.release("q")
+    except Exception:
+        pass

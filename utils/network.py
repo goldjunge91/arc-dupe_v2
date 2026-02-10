@@ -1,5 +1,7 @@
 import threading
 import time
+import pydivert
+
 
 _pydivert = None  # Lazy loaded
 _handle = None
