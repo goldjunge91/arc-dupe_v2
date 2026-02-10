@@ -25,6 +25,22 @@ from utils.network import (
     stop_packet_tamper,
     is_tampering,
 )
+from defaults import (
+    CLICK_HOLD_MS,
+    CONTEXT_MENU_WAIT_MS,
+    KEYCARD_DC_WAIT_DEFAULT,
+    KEYCARD_DROP_DELAY_DEFAULT,
+    KEYCARD_INV_DELAY_DEFAULT,
+    KEYCARD_RCLICK_DELAY_DEFAULT,
+    TAB_KEY_PRESS_DELAY_MS,
+    TAB_CLOSE_DELAY_MS,
+    RECONNECT_START_DELAY_MS,
+    KEY_PRESS_HOLD_MS,
+    KEYCARD_E_DC_DELAY_DEFAULT,
+    KEYCARD_OFFLINE_ESPAM_DEFAULT,
+    KEYCARD_RECONNECT_ESPAM_DEFAULT,
+    KEYCARD_SPAM_DELAY_DEFAULT,
+)
 from utils.config import (
     CONFIG_FILE,
     load_config,
@@ -7157,14 +7173,24 @@ class QuickDupeApp:
                 print(f"KEY CARD GLITCH CYCLE {cycle}")
                 print(f"{'='*50}")
 
-                # Read all timing values ONCE at cycle start
-                dc_wait = self.config.get("keycard_dc_wait")
-                inv_delay = self.config.get("keycard_inv_delay")
-                rclick_delay = self.config.get("keycard_rclick_delay")
-                drop_delay = self.config.get("keycard_drop_delay")
-                offline_spam_duration = self.config.get("keycard_offline_espam_duration")
-                reconnect_spam_duration = self.config.get("keycard_espam_duration")
-                spam_delay = self.config.get("keycard_espam_delay")
+                # # Read all timing values ONCE at cycle start
+                # dc_wait = self.config.get("keycard_dc_wait")
+                # inv_delay = self.config.get("keycard_inv_delay")
+                # rclick_delay = self.config.get("keycard_rclick_delay")
+                # drop_delay = self.config.get("keycard_drop_delay")
+                # offline_spam_duration = self.config.get("keycard_offline_espam_duration")
+                # reconnect_spam_duration = self.config.get("keycard_espam_duration")
+                # spam_delay = self.config.get("keycard_espam_delay")
+
+                # Read all timing values ONCE at cycle start (use keycard-specific defaults)
+                dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
+                inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
+                rclick_delay = self.config.get("keycard_rclick_delay", KEYCARD_RCLICK_DELAY_DEFAULT)
+                drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
+                offline_spam_duration = self.config.get("keycard_offline_espam_duration", KEYCARD_OFFLINE_ESPAM_DEFAULT)
+                reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
+                spam_delay = self.config.get("keycard_espam_delay", KEYCARD_SPAM_DELAY_DEFAULT)
+
                 rclick_x, rclick_y = self.keycard_rclick_pos
                 drop_x, drop_y = self.keycard_drop_pos
                 
@@ -7200,10 +7226,11 @@ class QuickDupeApp:
                 self.root.after(0, lambda: self.show_overlay("Drop Key"))
                 
                 # Open inventory (TAB)
+                tab_hold = max(1, inv_delay / 2)
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(inv_delay)
+                self.vsleep(tab_hold)
                 pynput_keyboard.release(Key.tab)
-                self.vsleep(inv_delay)
+                self.vsleep(tab_hold)
 
                 if self.keycard_stop:
                     break
@@ -7213,9 +7240,9 @@ class QuickDupeApp:
                 pynput_mouse.position = (rclick_x, rclick_y)
                 self.vsleep(rclick_delay)
                 pynput_mouse.press(MouseButton.right)
-                self.vsleep(25)
+                self.vsleep(CLICK_HOLD_MS)
                 pynput_mouse.release(MouseButton.right)
-                self.vsleep(50)  # Wait for context menu
+                self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for context menu
                 
                 if self.keycard_stop:
                     break
@@ -7223,9 +7250,9 @@ class QuickDupeApp:
                 # Click drop option
                 print(f"[{cycle}] Clicking 'Drop' at ({drop_x}, {drop_y})...")
                 pynput_mouse.position = (drop_x, drop_y)
-                self.vsleep(25)
+                self.vsleep(CLICK_HOLD_MS)
                 pynput_mouse.press(MouseButton.left)
-                self.vsleep(25)
+                self.vsleep(CLICK_HOLD_MS)
                 pynput_mouse.release(MouseButton.left)
                 self.vsleep(drop_delay)
 
@@ -7234,9 +7261,9 @@ class QuickDupeApp:
 
                 # Close inventory
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(50)
+                self.vsleep(TAB_KEY_PRESS_DELAY_MS)
                 pynput_keyboard.release(Key.tab)
-                self.vsleep(100)
+                self.vsleep(TAB_CLOSE_DELAY_MS)
 
                 if self.keycard_stop:
                     break
@@ -7245,16 +7272,16 @@ class QuickDupeApp:
                 print(f"[{cycle}] Step 4: E-spamming while OFFLINE for {offline_spam_duration}ms...")
                 self.root.after(0, lambda: self.show_overlay("E-Spam (offline)"))
                 
-                spam_delay = spam_delay or 100  # Default 100ms if None
-                offline_spam_duration = offline_spam_duration or 1000  # Default 1000ms if None
+                spam_delay = spam_delay or KEYCARD_SPAM_DELAY_DEFAULT
+                offline_spam_duration = offline_spam_duration or KEYCARD_OFFLINE_ESPAM_DEFAULT
                 offline_spam_count = int(offline_spam_duration / spam_delay) if spam_delay > 0 else 0
                 for i in range(offline_spam_count):
                     if self.keycard_stop:
                         break
                     pynput_keyboard.press("e")
-                    self.vsleep(30)
+                    self.vsleep(KEY_PRESS_HOLD_MS)
                     pynput_keyboard.release("e")
-                    self.vsleep(max(0, spam_delay - 30))
+                    self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
 
                 if self.keycard_stop:
                     break
@@ -7264,7 +7291,7 @@ class QuickDupeApp:
                 self.root.after(0, lambda: self.show_overlay("RECONNECT!"))
                 stop_packet_drop()
                 is_disconnected = False
-                self.vsleep(25)  # Brief delay for reconnect to start
+                self.vsleep(RECONNECT_START_DELAY_MS)  # Brief delay for reconnect to start
 
                 if self.keycard_stop:
                     break
@@ -7273,7 +7300,7 @@ class QuickDupeApp:
                 print(f"[{cycle}] Step 6: E-spamming FAST during reconnection delay for {reconnect_spam_duration}ms...")
                 self.root.after(0, lambda: self.show_overlay("E-SPAM FAST!"))
                 
-                reconnect_spam_duration = reconnect_spam_duration or 3000  # Default 3000ms if None
+                reconnect_spam_duration = reconnect_spam_duration or KEYCARD_RECONNECT_ESPAM_DEFAULT
                 reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
                 print(f"[{cycle}] E-spamming {reconnect_spam_count} times (delay: {spam_delay}ms)")
                 
@@ -7281,9 +7308,9 @@ class QuickDupeApp:
                     if self.keycard_stop:
                         break
                     pynput_keyboard.press("e")
-                    self.vsleep(30)
+                    self.vsleep(KEY_PRESS_HOLD_MS)
                     pynput_keyboard.release("e")
-                    self.vsleep(max(0, spam_delay - 30))
+                    self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
 
                 print(f"[{cycle}] Key Card Glitch sequence complete!")
                 self.root.after(0, lambda: self.show_overlay("✔ Done!"))
