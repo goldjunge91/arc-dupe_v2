@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import pydivert
+import vgamepad
 import sys
 
 # Paths
@@ -12,17 +13,22 @@ try:
 except NameError:
     here = os.path.abspath('.')
 pydivert_path = os.path.dirname(pydivert.__file__)
+vgamepad_path = os.path.dirname(vgamepad.__file__)
 windivert_x64 = os.path.join(here, 'windivert_sdk', 'WinDivert-2.2.2-A', 'x64')
 images_dir = os.path.join(here, 'images')
 
 # Binaries: point to canonical SDK x64 copies
-binaries = []
 win_dll = os.path.join(windivert_x64, 'WinDivert.dll')
 win_sys64 = os.path.join(windivert_x64, 'WinDivert64.sys')
-if os.path.exists(win_dll):
-    binaries.append((win_dll, '.'))
-if os.path.exists(win_sys64):
-    binaries.append((win_sys64, '.'))
+# Require the SDK binaries to be present; abort the build if missing
+if not (os.path.exists(win_dll) and os.path.exists(win_sys64)):
+    raise SystemExit("Required Windivert SDK files not found in %s. Aborting build." % windivert_x64)
+
+# Use canonical x64 copies
+binaries = [
+    (win_dll, '.'),
+    (win_sys64, '.'),
+]
 
 # Data files: use images from images/ directory and include icon.ico from repo root
 datas = []
@@ -39,8 +45,8 @@ a = Analysis(
     ['quickdupe.py'],
     pathex=[],
     binaries=binaries,
-    datas=datas + [(pydivert_path, 'pydivert')],
-    hiddenimports=['pynput', 'pynput.keyboard', 'pynput.mouse', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'pynput._util', 'pynput._util.win32', 'pydivert', 'keyboard'],
+    datas=datas + [(vgamepad_path, 'vgamepad'), (pydivert_path, 'pydivert')],
+    hiddenimports=['pynput', 'pynput.keyboard', 'pynput.mouse', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'pynput._util', 'pynput._util.win32', 'vgamepad', 'pydivert', 'keyboard'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
