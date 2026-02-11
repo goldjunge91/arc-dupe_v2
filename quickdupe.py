@@ -7357,13 +7357,9 @@ class QuickDupeApp:
 
     def on_hatch_glitch_hotkey(self):
         """Toggle Hatch glitch v2 macro"""
-        # Hatch glitch hotkey handler intentionally disabled (commented-out feature). Do nothing.
-        print("[HOTKEY] Hatch glitch hotkey pressed but feature is commented out.")
-        # return
-        # if not self._espam_lock.acquire(
-        #     blocking=False
-        # ):  # Reuse espam lock for simplicity
-        #     return
+        # Prevent concurrent espam/hatch macros
+        if not self._espam_lock.acquire(blocking=False):
+            return
         try:
             print(f"[HOTKEY] Hatch glitch v2 hotkey PRESSED! running={self.hatch_glitch_running}")
             if self.hatch_glitch_running:
@@ -7372,6 +7368,7 @@ class QuickDupeApp:
                 self.root.after(0, lambda: self.hatch_glitch_status_var.set("Stopping..."))
             else:
                 print("[HOTKEY] Starting Hatch glitch v2 macro")
+                # Stop other macros that might interfere
                 self.hatch_glitch_stop = False
                 self.mine_stop = False
                 self.triggernade_stop = False
@@ -7388,13 +7385,9 @@ class QuickDupeApp:
 
     def on_hatch_glitch_efirst_hotkey(self):
         """Toggle Hatch glitch (E→DC) macro"""
-        # Hatch glitch (E→DC) hotkey handler intentionally disabled (commented-out feature). Do nothing.
-        print("[HOTKEY] Hatch glitch (E→DC) hotkey pressed but feature is commented out.")
-        # return
-        # if not self._espam_lock.acquire(
-        #     blocking=False
-        # ):  # Reuse espam lock for simplicity
-        #     return
+        # Prevent concurrent espam/hatch macros
+        if not self._espam_lock.acquire(blocking=False):
+            return
         try:
             print(f"[HOTKEY] Hatch glitch (E→DC) hotkey PRESSED! running={self.hatch_glitch_efirst_running}")
             if self.hatch_glitch_efirst_running:
@@ -7403,6 +7396,7 @@ class QuickDupeApp:
                 self.root.after(0, lambda: self.hatch_glitch_efirst_status_var.set("Stopping..."))
             else:
                 print("[HOTKEY] Starting Hatch glitch (E→DC) macro")
+                # Stop other macros that might interfere
                 self.hatch_glitch_stop = False
                 self.mine_stop = False
                 self.triggernade_stop = False
