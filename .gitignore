@@ -49,3 +49,14 @@ WinDivert32.sys
 windivertctl.exe
 V2
 _dist
+file/executive_summary.md
+file/keycard_glitch_analyse.md
+file/keycard_test_scripts.py
+file/visual_summary.md
+files/glitch_debug_plan.md
+files/quick_reference.md
+files/test_script.py
+files/wahrscheinlichste_loesung.md
+erweiterte_analyse.md
+Migrations guide.md
+quickdupe copy.py
