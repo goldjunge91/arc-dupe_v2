@@ -41,6 +41,14 @@ from config.defaults import (
     KEYCARD_OFFLINE_ESPAM_DEFAULT,
     KEYCARD_RECONNECT_ESPAM_DEFAULT,
     KEYCARD_ESPAM_DELAY_DEFAULT,
+    KEYCARD_E_DC_MIN_DELAY_MS,
+    KEYCARD_MOUSE_POSITION_DELAY_MS,
+    KEYCARD_GAMEPAD_Y_PRESS_DURATION_MS,
+    KEYCARD_GAMEPAD_Y_RELEASE_WAIT_MS,
+    KEYCARD_GAMEPAD_DPAD_PRESS_DURATION_MS,
+    KEYCARD_GAMEPAD_DPAD_RELEASE_WAIT_MS,
+    KEYCARD_GAMEPAD_A_PRESS_DURATION_MS,
+    KEYCARD_PRE_RECONNECT_DELAY_MS,
 )
 from utils.config import (
     CONFIG_FILE,
@@ -69,7 +77,7 @@ get_gamepad = gamepad.get_gamepad
 #                               KILLINMESMALLS/YOUSTAYGOLD/YOUR FATHER
 # =============================================================================
 # Unique build identifier - generated fresh each build by build.py
-BUILD_ID = "__BUILD_ID_PLACEHOLDER__"
+BUILD_ID = "62FAE6A7-ZqVeNuSzHj"
 
 def _check_obfuscation_enabled():
     """Check if obfuscation is enabled by looking for 'obfuscate' file next to exe"""
@@ -2211,6 +2219,97 @@ class QuickDupeApp:
         self.create_slider(
             frame, "E-spam speed (delay):", "keycard_espam_delay", 50, 30, 200, "ms"
         )
+        # ========== # Gamepad Timing Section Header ==========
+        ttk.Label(
+            frame, 
+            text="Gamepad Combo Timings:", 
+            font=("Arial", 9, "bold")
+        ).pack(anchor="w", padx=10, pady=(10, 2))
+        
+        # Mouse Position Delay
+        self.create_slider(
+            frame,
+            "Mouse position delay:",
+            "keycard_mouse_pos_delay",
+            50,  # default
+            0,   # min
+            200, # max
+            "ms",
+            tooltip="Delay after setting mouse position before gamepad combo starts"
+        )
+        
+        # Y Button (Menu Open) Timings
+        self.create_slider(
+            frame,
+            "Y button press duration:",
+            "keycard_gamepad_y_press",
+            60,  # default
+            10,  # min
+            200, # max
+            "ms",
+            tooltip="How long to hold Y button (opens item menu)"
+        )
+        
+        self.create_slider(
+            frame,
+            "Y button release wait:",
+            "keycard_gamepad_y_wait",
+            150, # default
+            50,  # min
+            500, # max
+            "ms",
+            tooltip="Wait time after releasing Y (menu animation delay)"
+        )
+        
+        # DPad Navigation Timings
+        self.create_slider(
+            frame,
+            "DPad press duration:",
+            "keycard_gamepad_dpad_press",
+            30,  # default
+            10,  # min
+            100, # max
+            "ms",
+            tooltip="How long to hold DPad Down (navigates to 'Drop')"
+        )
+        
+        self.create_slider(
+            frame,
+            "DPad release wait:",
+            "keycard_gamepad_dpad_wait",
+            30,  # default
+            10,  # min
+            200, # max
+            "ms",
+            tooltip="Wait time between DPad presses"
+        )
+        
+        # A Button (Confirm) Timing
+        self.create_slider(
+            frame,
+            "A button press duration:",
+            "keycard_gamepad_a_press",
+            30,  # default
+            10,  # min
+            100, # max
+            "ms",
+            tooltip="How long to hold A button (confirms drop action)"
+        )
+        
+        # Pre-Reconnect Delay
+        self.create_slider(
+            frame,
+            "Pre-reconnect delay:",
+            "keycard_pre_reconnect_delay",
+            50,  # default
+            0,   # min
+            200, # max
+            "ms",
+            tooltip="Delay before triggering reconnect (gives gamepad inputs time to process)"
+        )
+
+        # Separator nach Gamepad-Timings
+        ttk.Separator(frame, orient="horizontal").pack(fill="x", padx=10, pady=(10, 5))
 
         self.keycard_status_var = tk.StringVar(value="Ready")
         self.keycard_status_label = ttk.Label(
@@ -7135,13 +7234,25 @@ class QuickDupeApp:
                 cycle += 1
                 print(f"\n{'='*50}\nKEY CARD GLITCH CYCLE {cycle} - GAMEPAD COMBO\n{'='*50}")
 
-                # Lese Variablen aus der UI/Config
+                # ==================== LADE ALLE TIMING-WERTE AUS CONFIG ====================
                 rclick_x, rclick_y = self.keycard_rclick_pos
+                
+                # Core Timing
                 dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
                 inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
                 reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
                 spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
                 e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
+                
+                # Gamepad Combo Timing
+                mouse_pos_delay = self.config.get("keycard_mouse_pos_delay", KEYCARD_MOUSE_POSITION_DELAY_MS)
+                y_press_duration = self.config.get("keycard_gamepad_y_press", KEYCARD_GAMEPAD_Y_PRESS_DURATION_MS)
+                y_release_wait = self.config.get("keycard_gamepad_y_wait", KEYCARD_GAMEPAD_Y_RELEASE_WAIT_MS)
+                dpad_press_duration = self.config.get("keycard_gamepad_dpad_press", KEYCARD_GAMEPAD_DPAD_PRESS_DURATION_MS)
+                dpad_release_wait = self.config.get("keycard_gamepad_dpad_wait", KEYCARD_GAMEPAD_DPAD_RELEASE_WAIT_MS)
+                a_press_duration = self.config.get("keycard_gamepad_a_press", KEYCARD_GAMEPAD_A_PRESS_DURATION_MS)
+                pre_reconnect_delay = self.config.get("keycard_pre_reconnect_delay", KEYCARD_PRE_RECONNECT_DELAY_MS)
+                
                 
                 # Optional: Overlay Start
                 self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: STARTING..."))
@@ -7156,11 +7267,12 @@ class QuickDupeApp:
 
                 # Step 2: Interact (E) - Das Paket fliegt zum Server
                 pynput_keyboard.press("e")
-                self.vsleep(KEY_PRESS_HOLD_MS) # Konstante oder Variable aus Config
+                self.vsleep(KEY_PRESS_HOLD_MS) # Konstante aus defaults.py
                 pynput_keyboard.release("e")
                 
                 # Delay zwischen E-Press und dem "echten" Drop-Start
-                self.vsleep(max(2, e_dc_delay))
+                # Verwende Minimum-Delay aus defaults.py
+                self.vsleep(max(KEYCARD_E_DC_MIN_DELAY_MS, e_dc_delay))
 
                 if self.keycard_stop: break
 
@@ -7173,36 +7285,41 @@ class QuickDupeApp:
                 self.vsleep(inv_delay) # UI-Render Zeit abwarten (aus Slider)
                 
                 pynput_mouse.position = (rclick_x, rclick_y)
-                self.vsleep(50)
+                self.vsleep(mouse_pos_delay)
 
                 # 🚀 Gamepad Combo (Y -> Down -> Down -> A)
                 # Wir greifen auf die globale Instanz zu
                 gp = self.gp
                 v = self.vg
                 
-                # Menü auf (Y)
+                # 5.1: Contextmenü öffnen (Y)
                 gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_Y)
-                gp.update(); self.vsleep(60)
+                gp.update()
+                self.vsleep(y_press_duration)  # KONFIGURIERBAR via Slider!
                 gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_Y)
-                gp.update(); self.vsleep(150)
+                gp.update()
+                self.vsleep(y_release_wait)  # KONFIGURIERBAR via Slider!
 
                 # Navigieren (Down, Down)
                 for _ in range(2):
                     gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
-                    gp.update(); self.vsleep(30)
+                    gp.update(); 
+                    self.vsleep(dpad_press_duration)  # KONFIGURIERBAR via Slider!
                     gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
-                    gp.update(); self.vsleep(30)
+                    gp.update(); 
+                    self.vsleep(dpad_release_wait)
 
                 # Bestätigen (A)
                 gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_A)
-                gp.update(); self.vsleep(30)
+                gp.update(); 
+                self.vsleep(a_press_duration)
                 gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_A)
                 gp.update()
 
                 if self.keycard_stop: break
 
                 # Step 4: Reconnect
-                self.vsleep(50)
+                self.vsleep(pre_reconnect_delay)
                 stop_packet_drop()
                 is_disconnected = False
                 
