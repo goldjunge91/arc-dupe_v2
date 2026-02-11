@@ -49,6 +49,7 @@ from utils.config import (
     load_custom_macros,
     save_custom_macros,
 )
+from utils import timing
 from utils.obfuscation import rename_self_and_restart, _log_obfus
 
 
@@ -320,44 +321,29 @@ class QuickDupeApp:
         widget.bind("<Leave>", hide_tooltip)
 
     def vary(self, ms):
-        """Apply random variance to a single timing value (in ms). Returns ms."""
+        """Delegate timing variance to utils.timing.vary_ms"""
         variance_pct = self.timing_variance_var.get()
-        if variance_pct == 0:
-            return ms
-        max_delta = ms * variance_pct / 100.0
-        delta = random.uniform(-max_delta, max_delta)
-        return max(1, ms + delta)  # Never go below 1ms
+        return timing.vary_ms(ms, variance_pct)
 
     def vsleep(self, ms):
-        """Sleep for ms with variance applied. Checks stop flags every 50ms for responsiveness."""
-        total_ms = self.vary(ms)
-        chunk_ms = 50  # Check every 50ms for stop signals
-        elapsed = 0
-        while elapsed < total_ms:
-            # Check all stop flags
-            if self.mine_stop or self.triggernade_stop or self.espam_stop:
-                return  # Exit sleep early if any stop requested
-            sleep_time = min(chunk_ms, total_ms - elapsed)
-            time.sleep(sleep_time / 1000.0)
-            elapsed += sleep_time
+        """Sleep with variance and early-exit on macro stop flags using utils.timing.vsleep."""
+        variance_pct = self.timing_variance_var.get()
+
+        def _stop_check():
+            return (
+                getattr(self, 'mine_stop', False)
+                or getattr(self, 'triggernade_stop', False)
+                or getattr(self, 'espam_stop', False)
+                or getattr(self, 'untitled_stop', False)
+                or getattr(self, 'untitled2_stop', False)
+            )
+
+        timing.vsleep(ms, stop_check=_stop_check, variance_pct=variance_pct)
 
     def vary_balanced(self, ms, count):
-        """Generate 'count' delays that each vary but sum to exactly ms*count.
-        This makes loops look human while keeping total timing identical."""
+        """Delegate balanced variance generation to utils.timing.vary_balanced."""
         variance_pct = self.timing_variance_var.get()
-        if variance_pct == 0 or count <= 1:
-            return [ms] * count
-
-        # Generate random variations
-        max_delta = ms * variance_pct / 100.0
-        deltas = [random.uniform(-max_delta, max_delta) for _ in range(count)]
-
-        # Adjust so they sum to zero (balanced)
-        avg_delta = sum(deltas) / count
-        deltas = [d - avg_delta for d in deltas]
-
-        # Apply to base timing, ensure minimum 1ms
-        return [max(1, ms + d) for d in deltas]
+        return timing.vary_balanced(ms, count, variance_pct)
 
     def curved_drag(self, start, end, steps=20, step_delay=5):
         """Perform a drag from start to end with a randomized curved path"""
@@ -6942,26 +6928,428 @@ class QuickDupeApp:
         finally:
             self._keycard_lock.release()
 
+    # def run_keycard_macro(self):
+    #     """
+    #     ALTE FUNKTION
+    #     Key Card Glitch macro - CORRECT sequence:
+    #     1. Stand at locked door button (manual)
+    #     2. Disconnect
+    #     3. Open inventory + drop keycard (TAB → right-click → drop)
+    #     4. Spam E (while offline)
+    #     5. Reconnect
+    #     6. Spam E FAST (during 2-5s reconnection delay)
+    #     Result: Door unlocks + keycard duplicates on ground
+    #     """
+    #     is_disconnected = False
+    #     cycle = 0
+
+    #     print(f"[KEYCARD] Using positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
+
+    #     # Release all buttons before starting
+    #     release_buttons(self)
+
+    #     # Brief delay so starting hotkey doesn't trigger stop
+    #     time.sleep(0.2)
+
+    #     try:
+    #         while True:
+    #             if self.keycard_stop:
+    #                 print("[KEYCARD] Stop detected at cycle start")
+    #                 break
+
+    #             cycle += 1
+    #             print(f"\n{'='*50}")
+    #             print(f"KEY CARD GLITCH CYCLE {cycle}")
+    #             print(f"{'='*50}")
+
+    #             # # Read all timing values ONCE at cycle start
+    #             # dc_wait = self.config.get("keycard_dc_wait")
+    #             # inv_delay = self.config.get("keycard_inv_delay")
+    #             # rclick_delay = self.config.get("keycard_rclick_delay")
+    #             # drop_delay = self.config.get("keycard_drop_delay")
+    #             # offline_spam_duration = self.config.get("keycard_offline_espam_duration")
+    #             # reconnect_spam_duration = self.config.get("keycard_espam_duration")
+    #             # spam_delay = self.config.get("keycard_espam_delay")
+
+    #             # Read all timing values ONCE at cycle start (use keycard-specific defaults)
+    #             dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
+    #             inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
+    #             rclick_delay = self.config.get("keycard_rclick_delay", KEYCARD_RCLICK_DELAY_DEFAULT)
+    #             drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
+    #             offline_spam_duration = self.config.get("keycard_offline_espam_duration", KEYCARD_OFFLINE_ESPAM_DEFAULT)
+    #             reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
+    #             spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
+
+    #             rclick_x, rclick_y = self.keycard_rclick_pos
+    #             drop_x, drop_y = self.keycard_drop_pos
+                
+    #             print(f"[{cycle}] Timings: dc_wait={dc_wait}, inv_delay={inv_delay}, rclick={rclick_delay}, drop={drop_delay}")
+
+    #             # ===== KEYCARD GLITCH SEQUENCE =====
+    #             # Step 1: DISCONNECT
+    #             print(f"[{cycle}] Step 2: Disconnecting...")
+                
+    #             # IMMEDIATELY disconnect (use selected mode) - simultaneous with E
+    #             # Use ONLY keycard-specific e->DC delay (use centralized default)
+    #             e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
+    #             self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
+    #             # Respect keycard-specific DC mode (not hatch_glitch settings)
+    #             dc_mode = self.keycard_dc_mode_var.get()
+    #             if dc_mode == "both":
+    #                 start_packet_drop(outbound=True, inbound=True)
+    #                 print(f"[KEYCARD] Disconnected (BOTH) immediately after E")
+    #             elif dc_mode == "outbound":
+    #                 start_packet_drop(outbound=True, inbound=False)
+    #                 print(f"[KEYCARD] Disconnected (OUTBOUND) immediately after E")
+    #             else:  # inbound
+    #                 start_packet_drop(outbound=False, inbound=True)
+    #                 print(f"[KEYCARD] Disconnected (INBOUND) immediately after E")
+    #             is_disconnected = True
+    #             self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: OFFLINE"))
+    #             self.vsleep(dc_wait)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 3: DROP KEYCARD FROM INVENTORY (while offline - queued)
+    #             print(f"[{cycle}] Step 3: Opening inventory and dropping keycard (QUEUED)...")
+    #             self.root.after(0, lambda: self.show_overlay("Drop Key"))
+                
+    #             # Open inventory (TAB)
+    #             tab_hold = max(1, inv_delay / 2)
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(tab_hold)
+    #             pynput_keyboard.release(Key.tab)
+    #             self.vsleep(tab_hold)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Right-click on keycard
+    #             print(f"[{cycle}] Right-clicking keycard at ({rclick_x}, {rclick_y})...")
+    #             pynput_mouse.position = (rclick_x, rclick_y)
+    #             self.vsleep(rclick_delay)
+    #             pynput_mouse.press(MouseButton.right)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.release(MouseButton.right)
+    #             self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for context menu
+                
+    #             if self.keycard_stop:
+    #                 break
+                
+    #             # Click drop option
+    #             print(f"[{cycle}] Clicking 'Drop' at ({drop_x}, {drop_y})...")
+    #             pynput_mouse.position = (drop_x, drop_y)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.press(MouseButton.left)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.release(MouseButton.left)
+    #             self.vsleep(drop_delay)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Close inventory
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(TAB_KEY_PRESS_DELAY_MS)
+    #             pynput_keyboard.release(Key.tab)
+    #             self.vsleep(TAB_CLOSE_DELAY_MS)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 4: SPAM E (while still offline)
+    #             print(f"[{cycle}] Step 4: E-spamming while OFFLINE for {offline_spam_duration}ms...")
+    #             self.root.after(0, lambda: self.show_overlay("E-Spam (offline)"))
+                
+    #             spam_delay = spam_delay or KEYCARD_ESPAM_DELAY_DEFAULT
+    #             offline_spam_duration = offline_spam_duration or KEYCARD_OFFLINE_ESPAM_DEFAULT
+    #             offline_spam_count = int(offline_spam_duration / spam_delay) if spam_delay > 0 else 0
+    #             for i in range(offline_spam_count):
+    #                 if self.keycard_stop:
+    #                     break
+    #                 pynput_keyboard.press("e")
+    #                 self.vsleep(KEY_PRESS_HOLD_MS)
+    #                 pynput_keyboard.release("e")
+    #                 self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 5: RECONNECT
+    #             print(f"[{cycle}] Step 5: Reconnecting...")
+    #             self.root.after(0, lambda: self.show_overlay("RECONNECT!"))
+    #             stop_packet_drop()
+    #             is_disconnected = False
+    #             self.vsleep(RECONNECT_START_DELAY_MS)  # Brief delay for reconnect to start
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 6: SPAM E FAST (during reconnection delay window)
+    #             print(f"[{cycle}] Step 6: E-spamming FAST during reconnection delay for {reconnect_spam_duration}ms...")
+    #             self.root.after(0, lambda: self.show_overlay("E-SPAM FAST!"))
+                
+    #             reconnect_spam_duration = reconnect_spam_duration or KEYCARD_RECONNECT_ESPAM_DEFAULT
+    #             reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
+    #             print(f"[{cycle}] E-spamming {reconnect_spam_count} times (delay: {spam_delay}ms)")
+                
+    #             for i in range(reconnect_spam_count):
+    #                 if self.keycard_stop:
+    #                     break
+    #                 pynput_keyboard.press("e")
+    #                 self.vsleep(KEY_PRESS_HOLD_MS)
+    #                 pynput_keyboard.release("e")
+    #                 self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+
+    #             print(f"[{cycle}] Key Card Glitch sequence complete!")
+    #             self.root.after(0, lambda: self.show_overlay("✔ Done!"))
+
+    #             # Single execution (not a loop unless user wants repeat)
+    #             break
+
+    #     finally:
+    #         # Release all keys and buttons
+    #         pynput_keyboard.release("e")
+    #         pynput_keyboard.release(Key.tab)
+    #         pynput_mouse.release(MouseButton.left)
+    #         pynput_mouse.release(MouseButton.right)
+
+    #         # Ensure reconnected
+    #         if is_disconnected:
+    #             stop_packet_drop()
+
+    #         self.keycard_running = False
+    #         self.keycard_stop = False
+    #         self.root.after(0, lambda: self.keycard_status_var.set("Ready"))
+    #         self.root.after(
+    #             0, lambda: self.keycard_status_label.config(foreground="gray")
+    #         )
+    #         self.root.after(0, lambda: self.show_overlay("Key Card Glitch stopped."))
+    #         print(f"[KEYCARD] Macro finished after {cycle} cycles")
+
+
+    # def run_keycard_macro(self):
+    #     """
+    #     Key Card Glitch macro - REVERSE ORDER METHOD (Inbound Only):
+    #     Nutzt zentrale Konstanten für Klicks und Delays, komprimiert aber 
+    #     die Zeit zwischen Drop, Inventar-Schließen und E-Press maximal, 
+    #     um die serverseitige Race Condition zu erzwingen.
+    #     """
+    #     is_disconnected = False
+    #     cycle = 0
+
+    #     print(f"[KEYCARD] Using positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
+
+    #     # Release all buttons before starting
+    #     release_buttons(self)
+
+    #     # Brief delay so starting hotkey doesn't trigger stop
+    #     time.sleep(0.2)
+
+    #     try:
+    #         while True:
+    #             if self.keycard_stop:
+    #                 print("[KEYCARD] Stop detected at cycle start")
+    #                 break
+
+    #             cycle += 1
+    #             print(f"\n{'='*50}")
+    #             print(f"KEY CARD GLITCH CYCLE {cycle} - REVERSE ORDER")
+    #             print(f"{'='*50}")
+
+    #             # Read all timing values ONCE at cycle start (use keycard-specific defaults)
+    #             dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
+    #             inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
+    #             rclick_delay = self.config.get("keycard_rclick_delay", KEYCARD_RCLICK_DELAY_DEFAULT)
+    #             drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
+    #             offline_spam_duration = self.config.get("keycard_offline_espam_duration", KEYCARD_OFFLINE_ESPAM_DEFAULT)
+    #             reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
+    #             spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
+
+    #             rclick_x, rclick_y = self.keycard_rclick_pos
+    #             drop_x, drop_y = self.keycard_drop_pos
+                
+    #             print(f"[{cycle}] Timings: dc_wait={dc_wait}, inv_delay={inv_delay}, rclick={rclick_delay}, drop={drop_delay}")
+
+    #             # ===== KEYCARD GLITCH SEQUENCE =====
+                
+    #             # Step 1: DISCONNECT (MUSS INBOUND SEIN!)
+    #             print(f"[{cycle}] Step 1: Disconnecting...")
+                
+    #             e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
+    #             self.vsleep(e_dc_delay)  
+                
+    #             dc_mode = self.keycard_dc_mode_var.get()
+    #             if dc_mode != "inbound":
+    #                 print("[WARNUNG] DC Mode ist nicht auf 'Inbound' gestellt! Reverse Order erfordert Inbound!")
+                
+    #             if dc_mode == "both":
+    #                 start_packet_drop(outbound=True, inbound=True)
+    #                 print(f"[KEYCARD] Disconnected (BOTH)")
+    #             elif dc_mode == "outbound":
+    #                 start_packet_drop(outbound=True, inbound=False)
+    #                 print(f"[KEYCARD] Disconnected (OUTBOUND)")
+    #             else:  # inbound
+    #                 start_packet_drop(outbound=False, inbound=True)
+    #                 print(f"[KEYCARD] Disconnected (INBOUND) - CORRECT FOR REVERSE ORDER")
+                
+    #             is_disconnected = True
+    #             self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: INBOUND BLOCK"))
+    #             self.vsleep(dc_wait)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 2: DROP KEYCARD FROM INVENTORY
+    #             print(f"[{cycle}] Step 2: Opening inventory and clicking drop...")
+    #             self.root.after(0, lambda: self.show_overlay("Drop Key"))
+                
+    #             # Open inventory (TAB) - uses inv_delay half-splits as requested
+    #             tab_hold = max(1, inv_delay / 2)
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(tab_hold)
+    #             pynput_keyboard.release(Key.tab)
+    #             self.vsleep(tab_hold)
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Right-click on keycard
+    #             print(f"[{cycle}] Right-clicking keycard at ({rclick_x}, {rclick_y})...")
+    #             pynput_mouse.position = (rclick_x, rclick_y)
+    #             self.vsleep(rclick_delay)
+    #             pynput_mouse.press(MouseButton.right)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.release(MouseButton.right)
+    #             self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for context menu
+                
+    #             if self.keycard_stop:
+    #                 break
+                
+    #             # Click drop option
+    #             print(f"[{cycle}] Clicking 'Drop' at ({drop_x}, {drop_y})...")
+    #             pynput_mouse.position = (drop_x, drop_y)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.press(MouseButton.left)
+    #             self.vsleep(CLICK_HOLD_MS)
+    #             pynput_mouse.release(MouseButton.left)
+                
+    #             # ==========================================
+    #             # 🚀 REVERSE ORDER MAGIC (AGGRESSIVER) 🚀
+    #             # ==========================================
+                
+    #             # 1. Das Drop-Paket bekommt exakt 5ms Vorsprung
+    #             # self.vsleep(5) 
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # 2. Inventar schließen (TAB) - Wir nutzen deine Konstante für den Press...
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(TAB_KEY_PRESS_DELAY_MS)
+    #             pynput_keyboard.release(Key.tab)
+                
+    #             # ... ABER wir überspringen die TAB_CLOSE_DELAY_MS (35ms)!
+    #             # Wir schießen das "E" direkt in dem Moment ab, in dem das Inventar zugeht.
+    #             # self.vsleep(2) 
+                
+    #             # 3. DER KRITISCHE E-PRESS (Tür-Paket jagt direkt hinterher)
+    #             pynput_keyboard.press("e")
+    #             self.vsleep(KEY_PRESS_HOLD_MS)  # Nutzt deine 30ms Konstante
+    #             pynput_keyboard.release("e")
+
+    #             # ==========================================
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 3: SPAM E (Live-Spamming, da Outbound frei ist)
+    #             print(f"[{cycle}] Step 3: E-spamming LIVE für {offline_spam_duration}ms...")
+    #             self.root.after(0, lambda: self.show_overlay("E-Spam (Live)"))
+                
+    #             spam_delay = spam_delay or KEYCARD_ESPAM_DELAY_DEFAULT
+    #             offline_spam_duration = offline_spam_duration or KEYCARD_OFFLINE_ESPAM_DEFAULT
+    #             offline_spam_count = int(offline_spam_duration / spam_delay) if spam_delay > 0 else 0
+                
+    #             for i in range(offline_spam_count):
+    #                 if self.keycard_stop:
+    #                     break
+    #                 pynput_keyboard.press("e")
+    #                 self.vsleep(KEY_PRESS_HOLD_MS)
+    #                 pynput_keyboard.release("e")
+    #                 self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 4: RECONNECT
+    #             print(f"[{cycle}] Step 4: Reconnecting...")
+    #             self.root.after(0, lambda: self.show_overlay("RECONNECT!"))
+    #             stop_packet_drop()
+    #             is_disconnected = False
+                
+    #             # Nutzt deine Konstante für den Reconnect Start
+    #             self.vsleep(RECONNECT_START_DELAY_MS)  
+
+    #             if self.keycard_stop:
+    #                 break
+
+    #             # Step 5: SPAM E FAST (during reconnection delay window)
+    #             print(f"[{cycle}] Step 5: E-spamming FAST during reconnection delay for {reconnect_spam_duration}ms...")
+    #             self.root.after(0, lambda: self.show_overlay("E-SPAM FAST!"))
+                
+    #             reconnect_spam_duration = reconnect_spam_duration or KEYCARD_RECONNECT_ESPAM_DEFAULT
+    #             reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
+    #             print(f"[{cycle}] E-spamming {reconnect_spam_count} times (delay: {spam_delay}ms)")
+                
+    #             for i in range(reconnect_spam_count):
+    #                 if self.keycard_stop:
+    #                     break
+    #                 pynput_keyboard.press("e")
+    #                 self.vsleep(KEY_PRESS_HOLD_MS)
+    #                 pynput_keyboard.release("e")
+    #                 self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+
+    #             print(f"[{cycle}] Key Card Glitch sequence complete!")
+    #             self.root.after(0, lambda: self.show_overlay("✔ Done!"))
+
+    #             # Single execution (not a loop unless user wants repeat)
+    #             break
+
+    #     finally:
+    #         # Release all keys and buttons
+    #         pynput_keyboard.release("e")
+    #         pynput_keyboard.release(Key.tab)
+    #         pynput_mouse.release(MouseButton.left)
+    #         pynput_mouse.release(MouseButton.right)
+
+    #         # Ensure reconnected
+    #         if is_disconnected:
+    #             stop_packet_drop()
+
+    #         self.keycard_running = False
+    #         self.keycard_stop = False
+    #         self.root.after(0, lambda: self.keycard_status_var.set("Ready"))
+    #         self.root.after(
+    #             0, lambda: self.keycard_status_label.config(foreground="gray")
+    #         )
+    #         self.root.after(0, lambda: self.show_overlay("Key Card Glitch stopped."))
+    #         print(f"[KEYCARD] Macro finished after {cycle} cycles")
     def run_keycard_macro(self):
         """
-        Key Card Glitch macro - CORRECT sequence:
-        1. Stand at locked door button (manual)
-        2. Disconnect
-        3. Open inventory + drop keycard (TAB → right-click → drop)
-        4. Spam E (while offline)
-        5. Reconnect
-        6. Spam E FAST (during 2-5s reconnection delay)
-        Result: Door unlocks + keycard duplicates on ground
+        Key Card Glitch macro - FORWARD RACE METHOD (E -> Drop):
+        1. Blockiere Inbound
+        2. Drücke E (Tür-Paket fliegt zum Server)
+        3. SOFORT Inventar auf & Karte droppen (Drop jagt hinterher)
+        4. Reconnect
+        Resultat: Server prüft Tür, währenddessen legen wir die Karte auf den Boden!
         """
         is_disconnected = False
         cycle = 0
 
         print(f"[KEYCARD] Using positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
-
-        # Release all buttons before starting
         release_buttons(self)
-
-        # Brief delay so starting hotkey doesn't trigger stop
         time.sleep(0.2)
 
         try:
@@ -6972,141 +7360,94 @@ class QuickDupeApp:
 
                 cycle += 1
                 print(f"\n{'='*50}")
-                print(f"KEY CARD GLITCH CYCLE {cycle}")
+                print(f"KEY CARD GLITCH CYCLE {cycle} - FORWARD RACE")
                 print(f"{'='*50}")
 
-                # # Read all timing values ONCE at cycle start
-                # dc_wait = self.config.get("keycard_dc_wait")
-                # inv_delay = self.config.get("keycard_inv_delay")
-                # rclick_delay = self.config.get("keycard_rclick_delay")
-                # drop_delay = self.config.get("keycard_drop_delay")
-                # offline_spam_duration = self.config.get("keycard_offline_espam_duration")
-                # reconnect_spam_duration = self.config.get("keycard_espam_duration")
-                # spam_delay = self.config.get("keycard_espam_delay")
-
-                # Read all timing values ONCE at cycle start (use keycard-specific defaults)
                 dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
                 inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
                 rclick_delay = self.config.get("keycard_rclick_delay", KEYCARD_RCLICK_DELAY_DEFAULT)
                 drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
-                offline_spam_duration = self.config.get("keycard_offline_espam_duration", KEYCARD_OFFLINE_ESPAM_DEFAULT)
                 reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
                 spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
 
                 rclick_x, rclick_y = self.keycard_rclick_pos
                 drop_x, drop_y = self.keycard_drop_pos
-                
-                print(f"[{cycle}] Timings: dc_wait={dc_wait}, inv_delay={inv_delay}, rclick={rclick_delay}, drop={drop_delay}")
 
-                # ===== KEYCARD GLITCH SEQUENCE =====
-                # Step 1: DISCONNECT
-                print(f"[{cycle}] Step 2: Disconnecting...")
+                # Step 1: DISCONNECT (MUSS INBOUND SEIN!)
+                print(f"[{cycle}] Step 1: Disconnecting (Inbound)...")
                 
-                # IMMEDIATELY disconnect (use selected mode) - simultaneous with E
-                # Use ONLY keycard-specific e->DC delay (use centralized default)
-                e_dc_delay = self.config.get("keycard_e_dc_delay", KEYCARD_E_DC_DELAY_DEFAULT)
-                self.vsleep(e_dc_delay)  # Usually 0 = truly simultaneous
-                # Respect keycard-specific DC mode (not hatch_glitch settings)
                 dc_mode = self.keycard_dc_mode_var.get()
                 if dc_mode == "both":
                     start_packet_drop(outbound=True, inbound=True)
-                    print(f"[KEYCARD] Disconnected (BOTH) immediately after E")
                 elif dc_mode == "outbound":
                     start_packet_drop(outbound=True, inbound=False)
-                    print(f"[KEYCARD] Disconnected (OUTBOUND) immediately after E")
                 else:  # inbound
                     start_packet_drop(outbound=False, inbound=True)
-                    print(f"[KEYCARD] Disconnected (INBOUND) immediately after E")
+                
                 is_disconnected = True
-                self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: OFFLINE"))
+                self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: INBOUND BLOCK"))
                 self.vsleep(dc_wait)
 
                 if self.keycard_stop:
                     break
 
-                # Step 3: DROP KEYCARD FROM INVENTORY (while offline - queued)
-                print(f"[{cycle}] Step 3: Opening inventory and dropping keycard (QUEUED)...")
-                self.root.after(0, lambda: self.show_overlay("Drop Key"))
+                # ==========================================
+                # 🚀 FORWARD RACE MAGIC STARTET HIER 🚀
+                # ==========================================
                 
-                # Open inventory (TAB)
-                tab_hold = max(1, inv_delay / 2)
+                # 1. ZUERST E DRÜCKEN! (Der Tür-Check auf dem Server beginnt)
+                print(f"[{cycle}] Step 2: Pressing E (Door Check starts)...")
+                pynput_keyboard.press("e")
+                self.vsleep(KEY_PRESS_HOLD_MS)  # 30ms
+                pynput_keyboard.release("e")
+                
+                # WINZIGE PAUSE, damit das E-Paket auf jeden Fall zuerst ankommt
+                self.vsleep(5)
+                
+                # 2. SOFORT INVENTAR AUF UND DROP! (Jagt dem E-Paket in den Rücken)
+                print(f"[{cycle}] Step 3: Fast Drop sequence...")
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(tab_hold)
+                self.vsleep(TAB_KEY_PRESS_DELAY_MS)
                 pynput_keyboard.release(Key.tab)
-                self.vsleep(tab_hold)
-
-                if self.keycard_stop:
-                    break
-
+                
                 # Right-click on keycard
-                print(f"[{cycle}] Right-clicking keycard at ({rclick_x}, {rclick_y})...")
                 pynput_mouse.position = (rclick_x, rclick_y)
                 self.vsleep(rclick_delay)
                 pynput_mouse.press(MouseButton.right)
                 self.vsleep(CLICK_HOLD_MS)
                 pynput_mouse.release(MouseButton.right)
-                self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for context menu
+                self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for menu
                 
-                if self.keycard_stop:
-                    break
-                
-                # Click drop option
-                print(f"[{cycle}] Clicking 'Drop' at ({drop_x}, {drop_y})...")
+                # Click drop
                 pynput_mouse.position = (drop_x, drop_y)
-                self.vsleep(CLICK_HOLD_MS)
+                self.vsleep(10)
                 pynput_mouse.press(MouseButton.left)
                 self.vsleep(CLICK_HOLD_MS)
                 pynput_mouse.release(MouseButton.left)
-                self.vsleep(drop_delay)
 
-                if self.keycard_stop:
-                    break
-
-                # Close inventory
+                # Inventar schnell wieder zu
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(TAB_KEY_PRESS_DELAY_MS)
+                self.vsleep(15)
                 pynput_keyboard.release(Key.tab)
-                self.vsleep(TAB_CLOSE_DELAY_MS)
-
-                if self.keycard_stop:
-                    break
-
-                # Step 4: SPAM E (while still offline)
-                print(f"[{cycle}] Step 4: E-spamming while OFFLINE for {offline_spam_duration}ms...")
-                self.root.after(0, lambda: self.show_overlay("E-Spam (offline)"))
                 
-                spam_delay = spam_delay or KEYCARD_ESPAM_DELAY_DEFAULT
-                offline_spam_duration = offline_spam_duration or KEYCARD_OFFLINE_ESPAM_DEFAULT
-                offline_spam_count = int(offline_spam_duration / spam_delay) if spam_delay > 0 else 0
-                for i in range(offline_spam_count):
-                    if self.keycard_stop:
-                        break
-                    pynput_keyboard.press("e")
-                    self.vsleep(KEY_PRESS_HOLD_MS)
-                    pynput_keyboard.release("e")
-                    self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+                # ==========================================
 
                 if self.keycard_stop:
                     break
 
-                # Step 5: RECONNECT
-                print(f"[{cycle}] Step 5: Reconnecting...")
+                # Step 4: RECONNECT
+                print(f"[{cycle}] Step 4: Reconnecting...")
                 self.root.after(0, lambda: self.show_overlay("RECONNECT!"))
                 stop_packet_drop()
                 is_disconnected = False
-                self.vsleep(RECONNECT_START_DELAY_MS)  # Brief delay for reconnect to start
+                self.vsleep(RECONNECT_START_DELAY_MS)
 
                 if self.keycard_stop:
                     break
 
-                # Step 6: SPAM E FAST (during reconnection delay window)
-                print(f"[{cycle}] Step 6: E-spamming FAST during reconnection delay for {reconnect_spam_duration}ms...")
-                self.root.after(0, lambda: self.show_overlay("E-SPAM FAST!"))
-                
-                reconnect_spam_duration = reconnect_spam_duration or KEYCARD_RECONNECT_ESPAM_DEFAULT
+                # Step 5: SPAM E FAST (Zur Sicherheit während Reconnect)
+                print(f"[{cycle}] Step 5: Reconnect E-Spam...")
                 reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
-                print(f"[{cycle}] E-spamming {reconnect_spam_count} times (delay: {spam_delay}ms)")
-                
                 for i in range(reconnect_spam_count):
                     if self.keycard_stop:
                         break
@@ -7117,27 +7458,19 @@ class QuickDupeApp:
 
                 print(f"[{cycle}] Key Card Glitch sequence complete!")
                 self.root.after(0, lambda: self.show_overlay("✔ Done!"))
-
-                # Single execution (not a loop unless user wants repeat)
                 break
 
         finally:
-            # Release all keys and buttons
             pynput_keyboard.release("e")
             pynput_keyboard.release(Key.tab)
             pynput_mouse.release(MouseButton.left)
             pynput_mouse.release(MouseButton.right)
-
-            # Ensure reconnected
             if is_disconnected:
                 stop_packet_drop()
-
             self.keycard_running = False
             self.keycard_stop = False
             self.root.after(0, lambda: self.keycard_status_var.set("Ready"))
-            self.root.after(
-                0, lambda: self.keycard_status_label.config(foreground="gray")
-            )
+            self.root.after(0, lambda: self.keycard_status_label.config(foreground="gray"))
             self.root.after(0, lambda: self.show_overlay("Key Card Glitch stopped."))
             print(f"[KEYCARD] Macro finished after {cycle} cycles")
 
@@ -7172,7 +7505,7 @@ class QuickDupeApp:
     # on_hatch_glitch_efirst_hotkey and run_hatch_glitch_e_first_macro removed (legacy E-first variant)
 
     def run_hatch_glitch_macro(self):
-        """Hatch glitch (DC→E/E→DC) Collection macro (NEW METHOD): E press + Immediately DC → Drop key → Reconnect"""
+        """Hatch glitch (DC→E/E→DC) Collection macro (NEW METHOD): E press + Immediately DC-both → Drop key → Reconnect"""
 
         # Get settings
         repeat = self.hatch_glitch_repeat_var.get()

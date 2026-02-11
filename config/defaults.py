@@ -10,7 +10,7 @@ CONTEXT_MENU_WAIT_MS = 50
 # Delay after pressing TAB to allow inventory to open/close
 # Split into two halves in macros (press hold + post-release wait).
 # Default total ~70ms (matches keycard inv default), so use 35ms each.
-TAB_KEY_PRESS_DELAY_MS = 35
+TAB_KEY_PRESS_DELAY_MS = 15
 TAB_CLOSE_DELAY_MS = 35
 
 # Small delay after reconnect call to let reconnect start
