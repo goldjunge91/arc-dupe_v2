@@ -1,31 +1,48 @@
 import threading
 import time
-import pydivert
+
 
 
 _pydivert = None  # Lazy loaded
 _handle = None
 _on = False
+_drop_inbound = False
+_drop_outbound = False
 
 _tamper_handle = None
 _tamper_on = False
 _tamper_patterns = [0x64, 0x13, 0x88, 0x40, 0x1F, 0xA0, 0xAA, 0x55]
 
 
-def start_packet_drop(outbound=True, inbound=True):
-    """DROP PACKETS NOW"""
-    global _handle, _on, _pydivert
+def _apply_drop_state():
+    """Internal: restart packet drop with current inbound/outbound state"""
+    global _handle, _on, _pydivert, _drop_inbound, _drop_outbound
+
+    # Stop existing drop if running
     if _on:
+        h = _handle
+        _handle = None
+        _on = False
+        if h:
+            try:
+                h.close()
+            except:
+                pass
+        time.sleep(0.05)
+
+    # If nothing to drop, we're done
+    if not _drop_inbound and not _drop_outbound:
         return
 
+    # Lazy load pydivert only when needed
     if _pydivert is None:
         import pydivert
-
         _pydivert = pydivert
 
-    if outbound and inbound:
-        filt = "outbound or inbound"  # Clumsy's exact filter
-    elif outbound:
+    # Build filter based on current state
+    if _drop_outbound and _drop_inbound:
+        filt = "outbound or inbound"
+    elif _drop_outbound:
         filt = "outbound"
     else:
         filt = "inbound"
@@ -35,10 +52,37 @@ def start_packet_drop(outbound=True, inbound=True):
         _handle.open()
         _on = True
         threading.Thread(target=_drop_loop, daemon=True).start()
-        time.sleep(0.015)  # Match Clumsy's keypress toggle delay
+        time.sleep(0.015)
     except:
         _on = False
         _handle = None
+
+    
+def start_packet_drop(outbound=True, inbound=True):
+    """DROP PACKETS NOW - sets the drop state for specified directions"""
+    global _drop_inbound, _drop_outbound
+    _drop_inbound = inbound
+    _drop_outbound = outbound
+    _apply_drop_state()
+
+
+def set_drop_inbound(active):
+    """Set inbound drop state independently"""
+    global _drop_inbound
+    _drop_inbound = active
+    _apply_drop_state()
+
+
+def set_drop_outbound(active):
+    """Set outbound drop state independently"""
+    global _drop_outbound
+    _drop_outbound = active
+    _apply_drop_state()
+
+
+def get_drop_state():
+    """Returns (inbound_dropping, outbound_dropping)"""
+    return (_drop_inbound, _drop_outbound)
 
 
 def _drop_loop():

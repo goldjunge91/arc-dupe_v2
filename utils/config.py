@@ -31,12 +31,16 @@ def load_custom_macros():
                     data["macros"] = []
                 if "active_index" not in data:
                     data["active_index"] = 0
+                # Ensure each macro has expected keys (backwards compat)
+                for m in data.get("macros", []):
+                    if "dc_delay" not in m:
+                        m["dc_delay"] = 50
                 return data
         except:
             pass
     # Return default structure with one empty macro
     return {
-        "macros": [{"name": "Macro 1", "hotkey": "", "speed": 1.0, "events": []}],
+        "macros": [{"name": "Macro 1", "hotkey": "", "speed": 1.0, "dc_delay": 50, "events": []}],
         "active_index": 0,
     }
 
