@@ -51,7 +51,11 @@ from utils.config import (
 )
 from utils import timing
 from utils.obfuscation import rename_self_and_restart, _log_obfus
+from extra import gamepad
 
+# Expose gamepad helpers locally (use module attributes to avoid stale imports)
+init_gamepad = gamepad.init_gamepad
+get_gamepad = gamepad.get_gamepad
 
 # =============================================================================
 # OBFUSCATION FEATURES (opt-in: requires "obfuscate" file next to exe)
@@ -172,6 +176,27 @@ class QuickDupeApp:
         self.config = load_config()
         self.custom_macros_data = load_custom_macros()
         self.active_macro_index = self.custom_macros_data.get("active_index", 0)
+
+        # 🎮 GAMEPAD GLOBAL INITIALISIEREN
+        # Wichtig: importiere das Modul und initialisiere hier einmalig,
+        # damit self.gp / self.vg stabil verfügbar sind (kein double-init).
+        try:
+            print("[INIT] Initialisiere globales Gamepad...")
+            # Verwende das Modul 'gamepad' (import oben) — vermeidet stale from-imports
+            if gamepad.init_gamepad():
+                self.gp = gamepad.get_gamepad()
+                self.vg = gamepad.vg
+                print("[INIT] ✅ Gamepad Hardware-ID aktiv und persistent.")
+                log.info("Gamepad initialized in QuickDupeApp.__init__")
+            else:
+                self.gp = None
+                self.vg = None
+                print("[INIT] ❌ Gamepad konnte nicht geladen werden.")
+                log.warning("Gamepad init failed in QuickDupeApp.__init__")
+        except Exception:
+            self.gp = None
+            self.vg = None
+            log.exception("Exception during gamepad init in QuickDupeApp.__init__")
 
         # Load saved colors from config and derive companion colors
         if "bg_color" in self.config:
@@ -5466,8 +5491,6 @@ class QuickDupeApp:
         self.save_settings()
         print("[RESET] Hatch glitch (DC→E) parameters reset to defaults (NEW METHOD)")
 
-    
-
     def reset_all_settings(self):
         """Reset ALL settings including hotkeys and recordings to factory defaults"""
         import tkinter.messagebox as mb
@@ -6901,6 +6924,9 @@ class QuickDupeApp:
             )
             self.root.after(0, lambda: self.show_overlay("E-Spam stopped."))
 
+    # #########################
+    # Keycard Macros          #
+    # #########################
     def on_keycard_hotkey(self):
         """Toggle Key Card Glitch macro"""
         if not self._keycard_lock.acquire(blocking=False):
@@ -6928,143 +6954,350 @@ class QuickDupeApp:
         finally:
             self._keycard_lock.release()
 
-    def run_keycard_macro(self):
+    # def run_keycard_macro(self):
+    #     """
+    #     Key Card Glitch macro - DEBUG VERSION (Sichtbare Geschwindigkeit):
+    #     Nutzt Gamepad Combo Y -> Down -> Down -> A mit ausreichend Pausen für das UI.
+    #     """
+    #     is_disconnected = False
+    #     cycle = 0
+
+    #     # Gamepad sicherstellen
+    #     gamepad = get_gamepad()
+    #     if gamepad is None:
+    #         init_gamepad()
+    #         gamepad = get_gamepad()
+    #         if not gamepad: return
+    #         time.sleep(1.0)
+
+    #     release_buttons(self)
+    #     time.sleep(0.2)
+
+    #     try:
+    #         while True:
+    #             if self.keycard_stop: break
+    #             cycle += 1
+                
+    #             # Koordinaten und Defaults laden
+    #             rclick_x, rclick_y = self.keycard_rclick_pos
+    #             reconnect_spam_duration = self.config.get("keycard_espam_duration", 152)
+    #             spam_delay = self.config.get("keycard_espam_delay", 50)
+
+    #             # Step 1: DISCONNECT (Inbound)
+    #             start_packet_drop(outbound=False, inbound=True)
+    #             is_disconnected = True
+    #             self.root.after(0, lambda: self.show_overlay("DEBUG: BLOCK AN"))
+    #             self.vsleep(100) # Zeit für den Netzwerk-Stack
+
+    #             # Step 2: E DRÜCKEN (Interaktion)
+    #             pynput_keyboard.press("e")
+    #             self.vsleep(50)
+    #             pynput_keyboard.release("e")
+    #             self.vsleep(10) # Kleiner Puffer
+
+    #             # Step 3: INVENTAR ÖFFNEN
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(50)
+    #             pynput_keyboard.release(Key.tab)
+                
+    #             # ⏱️ WICHTIG: Lange Pause, damit das Inventar SICHTBAR offen ist
+    #             self.vsleep(300) 
+                
+    #             # 1. Maus auf Keycard positionieren
+    #             pynput_mouse.position = (rclick_x, rclick_y)
+    #             self.vsleep(100)
+    #             # ⏱️ WICHTIG: Lange Pause, damit das Inventar SICHTBAR offen ist
+    #             self.vsleep(300) 
+                
+    #             # 🚀 NEU: Echter Linksklick, um das Item für den Controller zu "aktivieren"
+    #             # print(f"[{cycle}] Maus-Klick zum Fokussieren...")
+    #             # pynput_mouse.click(MouseButton.left)
+    #             self.vsleep(200) # Gedenksekunde für das Spiel
+
+    #             # ⏱️ WICHTIG: Lange Pause, damit das Inventar SICHTBAR offen ist
+    #             self.vsleep(300) 
+                
+
+    #             if gamepad and vg:
+    #                 # 🚀 SCHRITT A: Der "Modus-Umschalter"
+    #                 # Wir drücken einmal Y nur um dem Spiel zu sagen: "Hallo, ich bin ein Controller"
+    #                 print(f"[{cycle}] Switch to Gamepad Mode...")
+    #                 gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+    #                 gamepad.update()
+    #                 self.vsleep(300) 
+    #                 gamepad.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+    #                 gamepad.update()
+    #                 # ⏱️ WICHTIG: Lange Pause, damit das Inventar SICHTBAR offen ist
+    #                 self.vsleep(300)
+    #                 print(f"[{cycle}] Switch to Gamepad Mode...")
+
+    #                 gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+    #                 gamepad.update()
+    #                 self.vsleep(300) 
+    #                 gamepad.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+    #                 gamepad.update()
+                    
+    #                 self.vsleep(300) # Warten, bis das Spiel den Modus gewechselt hat
+
+    #                 # 🚀 SCHRITT B: Das echte Kontextmenü öffnen
+    #                 print(f"[{cycle}] Öffne Kontextmenü (Y)...")
+    #                 gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+    #                 gamepad.update()
+    #                 self.vsleep(800) 
+    #                 gamepad.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_X)
+    #                 gamepad.update()
+                    
+    #                 self.vsleep(400) # WICHTIG: Lange Pause für die Menü-Animation!
+
+    #                 # 🚀 SCHRITT C: Navigieren (Down, Down)
+    #                 for i in range(2):
+    #                     print(f"[{cycle}] Gamepad Down {i+1}...")
+    #                     gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+    #                     gamepad.update()
+    #                     self.vsleep(400)
+    #                     gamepad.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+    #                     gamepad.update()
+    #                     self.vsleep(150)
+
+    #                 # 🚀 SCHRITT D: Bestätigen (A)
+    #                 print(f"[{cycle}] Gamepad A (Drop)...")
+    #                 gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
+    #                 gamepad.update()
+    #                 self.vsleep(100)
+    #                 gamepad.release_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
+    #                 gamepad.update()
+
+    #             # ⏱️ Karte sollte jetzt fallen. Wir warten kurz, damit du es siehst.
+    #             self.vsleep(500)
+
+    #             # Inventar schließen
+    #             pynput_keyboard.press(Key.tab)
+    #             self.vsleep(50)
+    #             pynput_keyboard.release(Key.tab)
+
+    #             # Step 4: RECONNECT
+    #             stop_packet_drop()
+    #             is_disconnected = False
+    #             self.vsleep(100) # Kurze Pause nach Reconnect
+
+    #             # Step 5: RECONNECT E-SPAM
+    #             reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
+    #             for _ in range(reconnect_spam_count):
+    #                 if self.keycard_stop: break
+    #                 pynput_keyboard.press("e")
+    #                 self.vsleep(30)
+    #                 pynput_keyboard.release("e")
+    #                 self.vsleep(max(0, spam_delay - 30))
+
+    #             self.root.after(0, lambda: self.show_overlay("✔ DEBUG DONE"))
+    #             break
+
+    #     finally:
+    #         if is_disconnected: stop_packet_drop()
+    #         self.keycard_running = False
+    #         self.root.after(0, lambda: self.keycard_status_var.set("Ready"))
+
+    def _run_keycard_macro(self):
         """
-        Key Card Glitch macro - FORWARD RACE METHOD (E -> Drop):
-        1. Blockiere Inbound
-        2. Drücke E (Tür-Paket fliegt zum Server)
-        3. SOFORT Inventar auf & Karte droppen (Drop jagt hinterher)
-        4. Reconnect
-        Resultat: Server prüft Tür, währenddessen legen wir die Karte auf den Boden!
+        Key Card Glitch macro - FORWARD RACE (E -> Gamepad Combo):
+        Nutzt Y -> Down -> Down -> A Mechanik mit Gamepad-Emulation.
         """
         is_disconnected = False
         cycle = 0
 
-        print(f"[KEYCARD] Using positions: RClick:{self.keycard_rclick_pos} Drop:{self.keycard_drop_pos}")
+        # 🎮 Gamepad-Sicherheitscheck (verwende self.gp / self.vg)
+        gp = getattr(self, 'gp', None)
+        vg_mod = getattr(self, 'vg', None)
+        if gp is None:
+            # Versuche einmalig zu initialisieren (falls beim Start fehlgeschlagen)
+            if gamepad.init_gamepad():
+                self.gp = gamepad.get_gamepad()
+                self.vg = gamepad.vg
+                gp = self.gp
+                vg_mod = self.vg
+            else:
+                print("[KEYCARD] Skipping - ViGEmBus not installed (enable drag drop or install ViGEmBus)")
+                try:
+                    self.root.after(0, lambda: self.keycard_status_var.set("ERROR: Install ViGEmBus"))
+                    self.root.after(0, lambda: self.keycard_status_label.config(foreground="red"))
+                except Exception:
+                    pass
+                self.keycard_running = False
+                return
+
         release_buttons(self)
         time.sleep(0.2)
 
         try:
             while True:
-                if self.keycard_stop:
-                    print("[KEYCARD] Stop detected at cycle start")
-                    break
-
+                if self.keycard_stop: break
                 cycle += 1
-                print(f"\n{'='*50}")
-                print(f"KEY CARD GLITCH CYCLE {cycle} - FORWARD RACE")
-                print(f"{'='*50}")
-
-                dc_wait = self.config.get("keycard_dc_wait", KEYCARD_DC_WAIT_DEFAULT)
-                inv_delay = self.config.get("keycard_inv_delay", KEYCARD_INV_DELAY_DEFAULT)
-                rclick_delay = self.config.get("keycard_rclick_delay", KEYCARD_RCLICK_DELAY_DEFAULT)
-                drop_delay = self.config.get("keycard_drop_delay", KEYCARD_DROP_DELAY_DEFAULT)
-                reconnect_spam_duration = self.config.get("keycard_espam_duration", KEYCARD_RECONNECT_ESPAM_DEFAULT)
-                spam_delay = self.config.get("keycard_espam_delay", KEYCARD_ESPAM_DELAY_DEFAULT)
-
+                
                 rclick_x, rclick_y = self.keycard_rclick_pos
-                drop_x, drop_y = self.keycard_drop_pos
+                reconnect_spam_duration = self.config.get("keycard_espam_duration", 152)
+                spam_delay = self.config.get("keycard_espam_delay", 50)
 
-                # Step 1: DISCONNECT (MUSS INBOUND SEIN!)
-                print(f"[{cycle}] Step 1: Disconnecting (Inbound)...")
-                
-                dc_mode = self.keycard_dc_mode_var.get()
-                if dc_mode == "both":
-                    start_packet_drop(outbound=True, inbound=True)
-                elif dc_mode == "outbound":
-                    start_packet_drop(outbound=True, inbound=False)
-                else:  # inbound
-                    start_packet_drop(outbound=False, inbound=True)
-                
+                # Step 1: DISCONNECT (Inbound Only für Drop-Zulassung)
+                start_packet_drop(outbound=False, inbound=True)
                 is_disconnected = True
-                self.root.after(0, lambda c=cycle: self.show_overlay(f"KC {c}: INBOUND BLOCK"))
-                self.vsleep(dc_wait)
+                self.root.after(0, lambda: self.show_overlay(f"KC {cycle}: BLOCK AN"))
+                self.vsleep(50)
 
-                if self.keycard_stop:
-                    break
-
-                # ==========================================
-                # 🚀 FORWARD RACE MAGIC STARTET HIER 🚀
-                # ==========================================
-                
-                # 1. ZUERST E DRÜCKEN! (Der Tür-Check auf dem Server beginnt)
-                print(f"[{cycle}] Step 2: Pressing E (Door Check starts)...")
+                # Step 2: ZUERST E DRÜCKEN (Server-Interaktion starten)
                 pynput_keyboard.press("e")
-                self.vsleep(KEY_PRESS_HOLD_MS)  # 30ms
+                self.vsleep(30)
                 pynput_keyboard.release("e")
-                
-                # WINZIGE PAUSE, damit das E-Paket auf jeden Fall zuerst ankommt
-                self.vsleep(5)
-                
-                # 2. SOFORT INVENTAR AUF UND DROP! (Jagt dem E-Paket in den Rücken)
-                print(f"[{cycle}] Step 3: Fast Drop sequence...")
-                pynput_keyboard.press(Key.tab)
-                self.vsleep(TAB_KEY_PRESS_DELAY_MS)
-                pynput_keyboard.release(Key.tab)
-                
-                # Right-click on keycard
-                pynput_mouse.position = (rclick_x, rclick_y)
-                self.vsleep(rclick_delay)
-                pynput_mouse.press(MouseButton.right)
-                self.vsleep(CLICK_HOLD_MS)
-                pynput_mouse.release(MouseButton.right)
-                self.vsleep(CONTEXT_MENU_WAIT_MS)  # Wait for menu
-                
-                # Click drop
-                pynput_mouse.position = (drop_x, drop_y)
                 self.vsleep(10)
-                pynput_mouse.press(MouseButton.left)
-                self.vsleep(CLICK_HOLD_MS)
-                pynput_mouse.release(MouseButton.left)
 
-                # Inventar schnell wieder zu
+                # Step 3: INVENTAR ÖFFNEN
                 pynput_keyboard.press(Key.tab)
-                self.vsleep(15)
+                self.vsleep(40)
                 pynput_keyboard.release(Key.tab)
                 
-                # ==========================================
+                # ⏱️ Warten, bis UI geladen ist & Maus positionieren
+                self.vsleep(200) 
+                pynput_mouse.position = (rclick_x, rclick_y)
+                self.vsleep(100) 
 
-                if self.keycard_stop:
-                    break
+                if gp and vg_mod:
+                    # 🚀 SCHRITT A: Modus-Switch erzwingen (Kurzer Y-Druck)
+                    # Dies stellt sicher, dass das Spiel auf Controller-Input achtet.
+                    gp.press_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                    gp.update(); self.vsleep(80)
+                    gp.release_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                    gp.update(); self.vsleep(150)
+
+                    # 🚀 SCHRITT B: Das ECHTE Menü öffnen (Zweiter Y-Druck)
+                    print(f"[{cycle}] Gamepad: Y (Kontextmenü)")
+                    gp.press_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                    gp.update(); self.vsleep(80)
+                    gp.release_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                    gp.update(); self.vsleep(250) # Zeit für die Menü-Animation!
+
+                    # 🚀 SCHRITT C: 2x DPAD DOWN
+                    for i in range(2):
+                        print(f"[{cycle}] Gamepad: Down {i+1}")
+                        gp.press_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+                        gp.update(); self.vsleep(80)
+                        gp.release_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+                        gp.update(); self.vsleep(100)
+
+                    # 🚀 SCHRITT D: A DRÜCKEN (Drop bestätigen)
+                    print(f"[{cycle}] Gamepad: A (Confirm Drop)")
+                    gp.press_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_A)
+                    gp.update(); self.vsleep(80)
+                    gp.release_button(button=vg_mod.XUSB_BUTTON.XUSB_GAMEPAD_A)
+                    gp.update()
+
+                # Inventar schnell schließen
+                self.vsleep(100)
+                pynput_keyboard.press(Key.tab)
+                self.vsleep(40)
+                pynput_keyboard.release(Key.tab)
 
                 # Step 4: RECONNECT
-                print(f"[{cycle}] Step 4: Reconnecting...")
-                self.root.after(0, lambda: self.show_overlay("RECONNECT!"))
                 stop_packet_drop()
                 is_disconnected = False
-                self.vsleep(RECONNECT_START_DELAY_MS)
+                self.vsleep(25)
 
-                if self.keycard_stop:
-                    break
-
-                # Step 5: SPAM E FAST (Zur Sicherheit während Reconnect)
-                print(f"[{cycle}] Step 5: Reconnect E-Spam...")
+                # Step 5: RECONNECT E-SPAM
                 reconnect_spam_count = int(reconnect_spam_duration / spam_delay) if spam_delay > 0 else 0
-                for i in range(reconnect_spam_count):
-                    if self.keycard_stop:
-                        break
+                for _ in range(reconnect_spam_count):
+                    if self.keycard_stop: break
                     pynput_keyboard.press("e")
-                    self.vsleep(KEY_PRESS_HOLD_MS)
+                    self.vsleep(30)
                     pynput_keyboard.release("e")
-                    self.vsleep(max(0, spam_delay - KEY_PRESS_HOLD_MS))
+                    self.vsleep(max(0, spam_delay - 30))
 
-                print(f"[{cycle}] Key Card Glitch sequence complete!")
-                self.root.after(0, lambda: self.show_overlay("✔ Done!"))
+                self.root.after(0, lambda: self.show_overlay("✔ SUCCESS?"))
                 break
 
         finally:
-            pynput_keyboard.release("e")
-            pynput_keyboard.release(Key.tab)
-            pynput_mouse.release(MouseButton.left)
-            pynput_mouse.release(MouseButton.right)
-            if is_disconnected:
-                stop_packet_drop()
+            if is_disconnected: stop_packet_drop()
             self.keycard_running = False
-            self.keycard_stop = False
             self.root.after(0, lambda: self.keycard_status_var.set("Ready"))
-            self.root.after(0, lambda: self.keycard_status_label.config(foreground="gray"))
-            self.root.after(0, lambda: self.show_overlay("Key Card Glitch stopped."))
-            print(f"[KEYCARD] Macro finished after {cycle} cycles")
+
+    def run_keycard_macro(self):
+        """
+        Key Card Glitch - Persistent Gamepad Version
+        Nutzt die globale Instanz self.gp
+        """
+        if not self.gp or not self.vg:
+            print("[KEYCARD] ❌ Abbruch: Kein globales Gamepad verfügbar!")
+            return
+
+        is_disconnected = False
+        release_buttons(self)
+
+        try:
+            while True:
+                if self.keycard_stop: break
+                
+                rclick_x, rclick_y = self.keycard_rclick_pos
+                
+                # Step 1: Inbound Block (UDP)
+                start_packet_drop(outbound=False, inbound=True)
+                is_disconnected = True
+                self.vsleep(50)
+
+                # Step 2: Interact (E) - Das Paket fliegt zum Server
+                pynput_keyboard.press("e")
+                self.vsleep(30)
+                pynput_keyboard.release("e")
+                self.vsleep(2) # Minimaler Zeitversatz für Wireshark-Sync
+
+                # Step 3: Inventar öffnen
+                pynput_keyboard.press(Key.tab)
+                self.vsleep(40)
+                pynput_keyboard.release(Key.tab)
+                
+                self.vsleep(180) # UI-Render Zeit abwarten
+                pynput_mouse.position = (rclick_x, rclick_y)
+                self.vsleep(50)
+
+                # 🚀 Gamepad Combo (Y -> Down -> Down -> A)
+                # Wir greifen auf die globale Instanz zu
+                gp = self.gp
+                v = self.vg
+                
+                # Menü auf (Y)
+                gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                gp.update(); self.vsleep(60)
+                gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_Y)
+                gp.update(); self.vsleep(150)
+
+                # Navigieren (Down, Down)
+                for _ in range(2):
+                    gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+                    gp.update(); self.vsleep(60)
+                    gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
+                    gp.update(); self.vsleep(60)
+
+                # Bestätigen (A)
+                gp.press_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_A)
+                gp.update(); self.vsleep(60)
+                gp.release_button(button=v.XUSB_BUTTON.XUSB_GAMEPAD_A)
+                gp.update()
+
+                # Step 4: Reconnect
+                self.vsleep(50)
+                stop_packet_drop()
+                is_disconnected = False
+                
+                # Inventar zu
+                pynput_keyboard.press(Key.tab)
+                self.vsleep(40)
+                pynput_keyboard.release(Key.tab)
+                
+                print("[KEYCARD] Glitch-Sequenz beendet.")
+                break
+
+        finally:
+            if is_disconnected: stop_packet_drop()
+            self.keycard_running = False
+    # #########################
+    # Hatch Macros          #
+    # #########################
 
     def on_hatch_glitch_hotkey(self):
         """Toggle Hatch glitch v2 macro"""
@@ -7093,8 +7326,6 @@ class QuickDupeApp:
                 threading.Thread(target=self.run_hatch_glitch_macro, daemon=True).start()
         finally:
             self._espam_lock.release()
-
-    # on_hatch_glitch_efirst_hotkey and run_hatch_glitch_e_first_macro removed (legacy E-first variant)
 
     def run_hatch_glitch_macro(self):
         """Hatch glitch (DC→E/E→DC) Collection macro (NEW METHOD): E press + Immediately DC-both → Drop key → Reconnect"""
