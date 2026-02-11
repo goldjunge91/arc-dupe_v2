@@ -33,4 +33,27 @@ KEYCARD_INV_DELAY_DEFAULT = 70
 KEYCARD_RCLICK_DELAY_DEFAULT = 200
 KEYCARD_DROP_DELAY_DEFAULT = 200
 
+# ==================== NEUE GAMEPAD TIMING KONSTANTEN ====================
+# Keycard Gamepad Combo Timing (Y -> Down -> Down -> A Sequenz)
+
+# Minimum Delay zwischen E-Press und DC-Start (Sicherheitswert)
+KEYCARD_E_DC_MIN_DELAY_MS = 2
+
+# Delay nach Mouse-Position-Set bevor Gamepad-Combo startet
+KEYCARD_MOUSE_POSITION_DELAY_MS = 50
+
+# Y-Button Timing (Menü öffnen)
+KEYCARD_GAMEPAD_Y_PRESS_DURATION_MS = 60  # Wie lange Y gehalten wird
+KEYCARD_GAMEPAD_Y_RELEASE_WAIT_MS = 150   # Wartezeit nach Y-Release (Menü-Animation)
+
+# DPad Navigation Timing (Down x2 für "Drop" Option)
+KEYCARD_GAMEPAD_DPAD_PRESS_DURATION_MS = 30   # Wie lange DPad Down gehalten wird
+KEYCARD_GAMEPAD_DPAD_RELEASE_WAIT_MS = 30     # Wartezeit zwischen DPad-Inputs
+
+# A-Button Timing (Drop bestätigen)
+KEYCARD_GAMEPAD_A_PRESS_DURATION_MS = 30      # Wie lange A gehalten wird
+
+# Delay vor dem Reconnect (gibt Gamepad-Inputs Zeit zum Verarbeiten)
+KEYCARD_PRE_RECONNECT_DELAY_MS = 50
+
 tab_hold = max(1, TAB_KEY_PRESS_DELAY_MS / 2)

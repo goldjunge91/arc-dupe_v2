@@ -77,7 +77,7 @@ get_gamepad = gamepad.get_gamepad
 #                               KILLINMESMALLS/YOUSTAYGOLD/YOUR FATHER
 # =============================================================================
 # Unique build identifier - generated fresh each build by build.py
-BUILD_ID = "62FAE6A7-ZqVeNuSzHj"
+BUILD_ID = "__BUILD_ID_PLACEHOLDER__"
 
 def _check_obfuscation_enabled():
     """Check if obfuscation is enabled by looking for 'obfuscate' file next to exe"""
