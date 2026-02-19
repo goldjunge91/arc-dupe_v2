@@ -16,44 +16,40 @@ Duplication macros for item exploits.
 - Run as Administrator
 - ViGEmBus driver (bundled, auto-installs on first run)
 
-## Download
+## Installation
 
-Get the latest release from [Releases](https://github.com/killinmesmalls/QuickDupe/releases).
+### Option 1: Prebuilt EXE
 
-Run `QuickDupe.exe` as Administrator. Install ViGEmBus when prompted.
+1. Download the latest release from [Releases](../../releases).
+2. Extract everything into one folder so the bundled files stay next to `QuickDupe.exe`.
+3. Right-click `QuickDupe.exe` and choose **Run as administrator**.
+4. Approve the ViGEmBus installation prompt on first launch (needed for controller emulation). WinDivert will be loaded automatically when you toggle packet drop.
+5. Config and logs are stored under `%APPDATA%\QuickDupe\` (`config.json`, `custom_macros.json`, `debug.log`).
 
-## Build from Source
+### Option 2: Run from source / build your own
 
-Build your own exe so you have a unique binary signature.
-
-### Requirements
-
-- Python 3.10+
-- PyInstaller
-
-### Steps
-
-1. Install dependencies:
+1. Install Python 3.10+.
+2. Install dependencies:
 ```
 pip install -r requirements.txt
-pip install pyinstaller
+pip install pyinstaller  # only needed if you want an exe
 ```
-
-2. Place these files in the same directory:
-   - `quickdupe.py`
-   - `QuickDupe.spec`
-   - `icon.ico`
-   - `icon.png`
-   - `ViGEmBus_1.22.0_x64_x86_arm64.exe`
-   - `WinDivert.dll`
-   - `WinDivert64.sys`
-
-3. Build:
+3. Run from source:
+```
+python quickdupe.py
+```
+4. To build an exe:
 ```
 pyinstaller QuickDupe.spec
 ```
+5. Your exe will be in the `dist` folder.
 
-4. Your exe will be in the `dist` folder.
+## How to Use
+
+1. Start QuickDupe (exe or `python quickdupe.py`) as Administrator.
+2. In the UI, set or record hotkeys for the macros you need (Keydoor, Throwable, Triggernade, E-Spam, Manual/Outbound/Inbound Disconnect, etc.).
+3. Press the configured hotkey in-game to run the macro. **ESC** stops all macros immediately.
+4. Use the disconnect toggle for packet drop/reconnect, and record a triggernade drop position that matches your screen resolution if needed.
 
 ## Notes
 
