@@ -106,9 +106,9 @@ def run_keydoor_macro(self):
         gp.update()
         print("[KEYDOOR] X released - key should be dropped")
 
-                if self.keydoor_stop:
-                    self.finish_keydoor(is_disconnected)
-                    return
+        if self.keydoor_stop:
+            self.finish_keydoor(is_disconnected)
+            return
 
     # TAB to exit inventory
     pynput_keyboard.press(Key.tab)
