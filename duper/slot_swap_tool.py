@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
 
 APP_NAME = "Dupe Item"
-BUILD_ID = "1BC0980D-lTlgkzkmCR"
+BUILD_ID = "__BUILD_ID_PLACEHOLDER__"
 VERSION = "1.0.0"
 ICON_FILE = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "icon.ico")
