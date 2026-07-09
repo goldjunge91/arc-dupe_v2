@@ -6,7 +6,7 @@ from pynput.mouse import Button as MouseButton, Controller as MouseController
 pynput_keyboard = KeyboardController()
 pynput_mouse = MouseController()
 
-def release_buttons(self):
+def release_buttons():
     # Release all buttons before starting
     pynput_mouse.release(MouseButton.left)
     pynput_mouse.release(MouseButton.right)
