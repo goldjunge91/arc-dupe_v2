@@ -8,7 +8,11 @@ It includes a build script to compile your own unique executable so you don't ge
 
 ## 📥 Download
 
-You can download the pre-compiled standalone executable directly from the **[GitHub Releases](https://github.com/goldjunge91/arc-dupe_v2/releases)** page.
+Der aktuellste Build der ausführbaren Datei (`SlotSwapTool.exe`) kann immer direkt über diesen permanenten Link heruntergeladen werden:
+
+➡️ **[SlotSwapTool.exe herunterladen (Direktlink)](https://github.com/goldjunge91/arc-dupe_v2/releases/download/latest/SlotSwapTool.exe)**
+
+*(Der Link wird bei jedem Push auf den `main`-Branch automatisch aktualisiert.)*
 
 > [!NOTE]
 > Always run the executable as **Administrator** to ensure simulated clicks and global keyboard hooks function properly over elevated game windows.
