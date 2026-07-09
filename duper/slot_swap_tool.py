@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
 
 APP_NAME = "Dupe Item"
-BUILD_ID = "__BUILD_ID_PLACEHOLDER__"
+BUILD_ID = "1BC0980D-lTlgkzkmCR"
 VERSION = "1.0.0"
 ICON_FILE = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "icon.ico")
@@ -388,8 +388,8 @@ class SlotSwapToolApp:
             "Wait time (in milliseconds) after clicks or key actions, giving the game time to safely process each action."
         )
         self.create_slider(
-            frame, "Speed factor:", self.speed_var, 1.0, 0.1, 5.0, "x",
-            "A multiplier (e.g. 2.0x) that shortens all delays and speeds up the entire sequence."
+            frame, "Speed factor:", self.speed_var, 1.0, 0.5, 1.5, "x",
+            "A multiplier (e.g. 1.5x) that shortens all delays and speeds up the entire sequence."
         )
 
         chk_frame = ttk.Frame(frame)

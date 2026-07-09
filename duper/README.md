@@ -1,9 +1,7 @@
 # Slot Swap Tool (Dupe Item)
 
 Inventory slot swap macro to automate item duplication. 
-
 It mimics mouse clicks, moves, and hotkeys using fine-grained timing to swap items out of their slots.
-
 It includes a build script to compile your own unique executable so you don't get banned for binary signatures.
 
 ---
