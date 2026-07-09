@@ -1,15 +1,4 @@
 from __future__ import annotations
-import os
-import sys
-
-# Add parent directory to path to locate the utils package
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from utils import timing
-from pynput.mouse import Button as MouseButton, Controller as MouseController, Listener as MouseListener
-from pynput.keyboard import Controller as KeyboardController, Key, Listener as KeyboardListener
-import keyboard
-
 import ctypes
 import json
 import os
@@ -20,6 +9,14 @@ import time
 import tkinter as tk
 from tkinter import ttk, filedialog
 from typing import Any
+
+# Add parent directory to path to locate the utils package
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils import timing
+from pynput.mouse import Button as MouseButton, Controller as MouseController, Listener as MouseListener
+from pynput.keyboard import Controller as KeyboardController, Key
+import keyboard
 
 
 def _bootstrap_venv() -> None:
@@ -51,6 +48,7 @@ if __name__ == "__main__":
 
 
 APP_NAME = "Dupe Item"
+BUILD_ID = "__BUILD_ID_PLACEHOLDER__"
 VERSION = "1.0.0"
 ICON_FILE = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "icon.ico")
@@ -171,7 +169,6 @@ class SlotSwapToolApp:
         self.cooldown_until = 0
         self._recording_previous_value = ""
         self.hotkey_listener = KeyboardHotkeyListener(lambda: self.root.after(0, self.toggle_macro))
-        self._position_esc_listener = None
 
         self.build_ui()
         self._apply_config_to_ui()
@@ -179,49 +176,56 @@ class SlotSwapToolApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _configure_window_chrome(self) -> None:
-        """Hide the default title bar using Windows API, keeping taskbar and focus functionality intact."""
-        if os.path.exists(ICON_FILE):
-            try:
-                self.root.iconbitmap(default=ICON_FILE)
-            except Exception:
-                pass
+        """Hide the default title bar and configure taskbar integration."""
+        self.root.overrideredirect(True)  # Remove default Windows title bar
+        self.hwnd = None
+        self.root.after(10, self._fix_taskbar)
 
-        if os.name != "nt":
-            return
+    def _fix_taskbar(self):
+        """Make window show in taskbar despite overrideredirect"""
+        GWL_EXSTYLE = -20
+        WS_EX_APPWINDOW = 0x00040000
+        WS_EX_TOOLWINDOW = 0x00000080
+        SWP_FRAMECHANGED = 0x0020
+        SWP_NOMOVE = 0x0002
+        SWP_NOSIZE = 0x0001
+        SWP_NOZORDER = 0x0004
+        HWND_NOTOPMOST = -2
+
+        self.root.update()
 
         try:
-            self.root.update_idletasks()
-            hwnd = self.root.winfo_id()
-            user32 = ctypes.windll.user32
-            get_window_long = getattr(
-                user32, "GetWindowLongPtrW", user32.GetWindowLongW)
-            set_window_long = getattr(
-                user32, "SetWindowLongPtrW", user32.SetWindowLongW)
-
-            GWL_STYLE = -16
-            WS_CAPTION = 0x00C00000
-            
-            SWP_NOMOVE = 0x0002
-            SWP_NOSIZE = 0x0001
-            SWP_NOZORDER = 0x0004
-            SWP_FRAMECHANGED = 0x0020
-
-            # Remove title bar/borders using GWL_STYLE (WS_CAPTION)
-            style = get_window_long(hwnd, GWL_STYLE)
-            style = int(style) & ~WS_CAPTION
-            set_window_long(hwnd, GWL_STYLE, style)
-
-            user32.SetWindowPos(
-                hwnd,
-                None,
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED,
-            )
+            frame = self.root.wm_frame()
+            if frame:
+                hwnd = int(frame, 16)
+            else:
+                hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
         except Exception:
-            pass
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+
+        if not hwnd:
+            hwnd = self.root.winfo_id()
+
+        self.hwnd = hwnd
+
+        # Get and modify extended style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        new_style = (style & ~WS_EX_TOOLWINDOW) | WS_EX_APPWINDOW
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, new_style)
+
+        # Force Windows to update the window frame
+        ctypes.windll.user32.SetWindowPos(
+            hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED
+        )
+
+        # Hide and show to force taskbar refresh
+        self.root.withdraw()
+        self.root.after(100, self._show_window)
+
+    def _show_window(self):
+        """Show window after taskbar fix"""
+        self.root.deiconify()
+        self.root.update()
 
     def setup_dark_theme(self):
         style = ttk.Style()
@@ -367,27 +371,25 @@ class SlotSwapToolApp:
         ttk.Label(pos_frame, textvariable=self.positions_var,
                   font=("Consolas", 8)).pack(side="left", padx=6)
 
-
-
         self.create_slider(
             frame, "Move left distance:", self.move_left_px_var, 600, 10, 1000, "px",
-            "Der Abstand (in Pixeln), um den die Maus beim Halten von Alt nach links gezogen wird, um das Item temporär aus dem Slot zu bewegen."
+            "Distance (in pixels) the mouse is dragged left while holding Alt to temporarily move the item out of its slot."
         )
         self.create_slider(
             frame, "Move steps:", self.move_steps_var, 50, 1, 150, "",
-            "Die Anzahl der Zwischenschritte während der Mausbewegung. Mehr Schritte bedeuten eine flüssigere, natürlichere Bewegung."
+            "Number of intermediate steps during mouse movement. More steps produce a smoother, more natural motion."
         )
         self.create_slider(
             frame, "Step delay:", self.step_delay_var, 25, 0, 100, "ms",
-            "Die Verzögerung (in Millisekunden) zwischen den einzelnen Bewegungsschritten. Beeinflusst die Geschwindigkeit des Ziehvorgangs."
+            "Delay (in milliseconds) between individual movement steps. Affects the speed of the drag operation."
         )
         self.create_slider(
             frame, "Settle delay:", self.settle_delay_var, 15, 0, 200, "ms",
-            "Die Wartezeit (in Millisekunden) nach Klicks oder Tastenaktionen, damit das Spiel die Aktion sicher verarbeiten kann."
+            "Wait time (in milliseconds) after clicks or key actions, giving the game time to safely process each action."
         )
         self.create_slider(
             frame, "Speed factor:", self.speed_var, 1.0, 0.1, 5.0, "x",
-            "Ein Multiplikator (z.B. 2.0x), der alle Verzögerungen verkürzt und den gesamten Ablauf beschleunigt."
+            "A multiplier (e.g. 2.0x) that shortens all delays and speeds up the entire sequence."
         )
 
         chk_frame = ttk.Frame(frame)
@@ -438,7 +440,7 @@ class SlotSwapToolApp:
 
         footer = ttk.Label(
             frame,
-            text="ESC stoppt das laufende Makro.",
+            text="ESC stops the running macro.",
             style="Dim.TLabel",
         )
         footer.pack(pady=(10, 0))
@@ -562,7 +564,7 @@ class SlotSwapToolApp:
             return "No positions"
         pos_strs = [f"S{i+1}:{list(pos)}" for i, pos in enumerate(self.slot_positions[:2])]
         if len(self.slot_positions) > 2:
-            pos_strs.append(f"(+{len(self.slot_positions)-2} mehr)")
+            pos_strs.append(f"(+{len(self.slot_positions)-2} more)")
         return " ".join(pos_strs)
 
     def save_settings(self):
@@ -609,7 +611,10 @@ class SlotSwapToolApp:
         self.initial_tab_var.set(bool(self.config.get("initial_tab", False)))
 
     def minimize_window(self):
-        if self.root.winfo_exists():
+        if hasattr(self, "hwnd") and self.hwnd:
+            SW_MINIMIZE = 6
+            ctypes.windll.user32.ShowWindow(self.hwnd, SW_MINIMIZE)
+        elif self.root.winfo_exists():
             self.root.iconify()
 
     def start_recording_hotkey(self):
@@ -673,27 +678,6 @@ class SlotSwapToolApp:
             self.save_settings()
             self.register_hotkeys()
             self.status_var.set(f"Hotkey: {hotkey}")
-    def _hotkey_to_pynput(self, hotkey: str) -> str:
-        parts = []
-        for token in hotkey.split("+"):
-            token = token.strip().lower()
-            if not token:
-                continue
-            if token in {"ctrl", "control", "control_l", "control_r"}:
-                parts.append("<ctrl>")
-            elif token in {"alt", "alt_l", "alt_r"}:
-                parts.append("<alt>")
-            elif token in {"shift", "shift_l", "shift_r"}:
-                parts.append("<shift>")
-            elif token in {"esc", "escape"}:
-                parts.append("<esc>")
-            elif token in {"page up", "page_up"}:
-                parts.append("<page_up>")
-            elif token in {"page down", "page_down"}:
-                parts.append("<page_down>")
-            else:
-                parts.append(token)
-        return "+".join(parts)
 
     def _stop_hotkey_listener(self):
         try:
@@ -717,13 +701,11 @@ class SlotSwapToolApp:
             self.hotkey_registered = None
             print(f"[HOTKEY] Hotkey registration failed: {e}")
 
-
-
     def start_recording_positions(self):
         self.recording_positions = True
         self.slot_positions = []
-        self.positions_var.set("Klicke Slots... (Enter = Fertig, ESC = Abbruch)")
-        self.status_var.set("Aufnahme...")
+        self.positions_var.set("Click slots... (Enter = Done, ESC = Cancel)")
+        self.status_var.set("Recording...")
         self.pos_btn.config(state="disabled")
 
         # Disable main ESC stop hotkey during recording so it doesn't conflict
@@ -743,7 +725,7 @@ class SlotSwapToolApp:
             if pressed and button == MouseButton.left:
                 self.slot_positions.append((int(x), int(y)))
                 self.root.after(0, lambda: self.positions_var.set(
-                    f"Slots: {len(self.slot_positions)} (Enter = Fertig, ESC = Abbruch)"
+                    f"Slots: {len(self.slot_positions)} (Enter = Done, ESC = Cancel)"
                 ))
 
         self.mouse_listener = MouseListener(on_click=on_click)
@@ -752,16 +734,16 @@ class SlotSwapToolApp:
     def finish_recording_positions(self):
         self._stop_position_recording_listeners()
         if len(self.slot_positions) < 2:
-            self.status_var.set("Fehler: Mindestens 2 Slots benötigt")
+            self.status_var.set("Error: At least 2 slots required")
             self._apply_config_to_ui()
         else:
-            self.status_var.set(f"{len(self.slot_positions)} Slots aufgenommen")
+            self.status_var.set(f"{len(self.slot_positions)} slots recorded")
             self.save_settings()
         self.pos_btn.config(state="normal")
 
     def cancel_recording_positions(self):
         self._stop_position_recording_listeners()
-        self.status_var.set("Aufnahme abgebrochen")
+        self.status_var.set("Recording cancelled")
         self.pos_btn.config(state="normal")
         self._apply_config_to_ui()
 
@@ -813,7 +795,7 @@ class SlotSwapToolApp:
                 return
 
             if len(self.slot_positions) < 2:
-                self.status_var.set("Bitte zuerst Slots aufnehmen (min. 2)")
+                self.status_var.set("Please record at least 2 slots first")
                 return
 
             self.running = True
@@ -1007,7 +989,7 @@ class SlotSwapToolApp:
                 speed = max(0.01, self.speed_var.get())
                 timing.vsleep(max(150, int(300 / speed)), stop_check=lambda: self.stop_flag, variance_pct=0)
         except Exception as e:
-            self.status_var.set(f"Fehler: {e}")
+            self.status_var.set(f"Error: {e}")
             print(f"[SLOT-SWAP] Error: {e}")
         finally:
             self.running = False
@@ -1016,26 +998,18 @@ class SlotSwapToolApp:
             self.root.after(0, lambda: self.toggle_btn.config(text="Start"))
             self.root.after(0, lambda: self.status_var.set("Ready"))
 
-
-
-    def vsleep(self, ms):
-        timing.vsleep(ms, stop_check=lambda: self.stop_flag, variance_pct=0)
-
     def on_close(self):
         self.stop_flag = True
         self.save_settings()
         try:
             self._stop_hotkey_listener()
-            if self._position_esc_listener is not None:
-                self._position_esc_listener.stop()
         except Exception:
             pass
         self.root.destroy()
 
-
 def main():
     if not _check_admin():
-        print("[WARN] Empfehlenswert: als Administrator starten.")
+        print("[WARN] Recommended: run as Administrator.")
     root = tk.Tk()
     SlotSwapToolApp(root)
     root.mainloop()
