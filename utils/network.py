@@ -1,22 +1,20 @@
 import threading
 import time
 
-
-
 _pydivert = None  # Lazy loaded
 _handle = None
 _on = False
 _drop_inbound = False
 _drop_outbound = False
+_custom_filter = None  # Erlaubt eigene WinDivert Filter (wie unseren 544-Byte Filter)
 
 _tamper_handle = None
 _tamper_on = False
 _tamper_patterns = [0x64, 0x13, 0x88, 0x40, 0x1F, 0xA0, 0xAA, 0x55]
 
-
 def _apply_drop_state():
     """Internal: restart packet drop with current inbound/outbound state"""
-    global _handle, _on, _pydivert, _drop_inbound, _drop_outbound
+    global _handle, _on, _pydivert, _drop_inbound, _drop_outbound, _custom_filter
 
     # Stop existing drop if running
     if _on:
@@ -31,7 +29,7 @@ def _apply_drop_state():
         time.sleep(0.05)
 
     # If nothing to drop, we're done
-    if not _drop_inbound and not _drop_outbound:
+    if not _drop_inbound and not _drop_outbound and not _custom_filter:
         return
 
     # Lazy load pydivert only when needed
@@ -39,54 +37,57 @@ def _apply_drop_state():
         import pydivert
         _pydivert = pydivert
 
-    # Build filter based on current state
-    if _drop_outbound and _drop_inbound:
-        filt = "outbound or inbound"
-    elif _drop_outbound:
-        filt = "outbound"
+    # Build filter based on custom string OR current state
+    if _custom_filter:
+        filt = _custom_filter
     else:
-        filt = "inbound"
+        if _drop_outbound and _drop_inbound:
+            filt = "outbound or inbound"
+        elif _drop_outbound:
+            filt = "outbound"
+        else:
+            filt = "inbound"
 
     try:
         _handle = _pydivert.WinDivert(filt)
         _handle.open()
         _on = True
         threading.Thread(target=_drop_loop, daemon=True).start()
+        print(f"[NETWORK] WinDivert AKTIV: {filt}")
         time.sleep(0.015)
-    except:
+    except Exception as e:
+        print(f"[NETWORK] Error: {e}")
         _on = False
         _handle = None
 
-    
-def start_packet_drop(outbound=True, inbound=True):
-    """DROP PACKETS NOW - sets the drop state for specified directions"""
-    global _drop_inbound, _drop_outbound
+def start_packet_drop(outbound=True, inbound=True, custom_filter=None):
+    """DROP PACKETS NOW - sets the drop state or custom filter"""
+    global _drop_inbound, _drop_outbound, _custom_filter
     _drop_inbound = inbound
     _drop_outbound = outbound
+    _custom_filter = custom_filter
     _apply_drop_state()
-
 
 def set_drop_inbound(active):
     """Set inbound drop state independently"""
-    global _drop_inbound
+    global _drop_inbound, _custom_filter
     _drop_inbound = active
+    _custom_filter = None
     _apply_drop_state()
-
 
 def set_drop_outbound(active):
     """Set outbound drop state independently"""
-    global _drop_outbound
+    global _drop_outbound, _custom_filter
     _drop_outbound = active
+    _custom_filter = None
     _apply_drop_state()
-
 
 def get_drop_state():
     """Returns (inbound_dropping, outbound_dropping)"""
     return (_drop_inbound, _drop_outbound)
 
-
 def _drop_loop():
-    global _on
+    global _on, _handle
     while _on:
         try:
             if _handle:
@@ -96,7 +97,6 @@ def _drop_loop():
         except:
             break
     _on = False
-
 
 def stop_packet_drop():
     """STOP DROPPING NOW"""
@@ -113,10 +113,8 @@ def stop_packet_drop():
             pass
     time.sleep(0.05)  # Give thread time to exit
 
-
 def is_dropping():
     return _on
-
 
 def start_packet_tamper(outbound=True, inbound=True):
     """Start tampering packets - corrupt data but still send"""
@@ -126,7 +124,6 @@ def start_packet_tamper(outbound=True, inbound=True):
 
     if _pydivert is None:
         import pydivert
-
         _pydivert = pydivert
 
     if outbound and inbound:
@@ -147,9 +144,8 @@ def start_packet_tamper(outbound=True, inbound=True):
         _tamper_on = False
         _tamper_handle = None
 
-
 def _tamper_loop():
-    global _tamper_on
+    global _tamper_on, _tamper_handle, _tamper_patterns
     while _tamper_on and _tamper_handle:
         try:
             packet = _tamper_handle.recv()
@@ -161,7 +157,6 @@ def _tamper_loop():
             _tamper_handle.send(packet)
         except:
             break
-
 
 def stop_packet_tamper():
     """Stop tampering packets"""
@@ -176,7 +171,6 @@ def stop_packet_tamper():
             pass
         _tamper_handle = None
     print("[TAMPER] Stopped")
-
 
 def is_tampering():
     return _tamper_on
